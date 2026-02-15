@@ -1,10 +1,13 @@
-.PHONY: dev dev-backend dev-frontend build test lint clean setup
+.PHONY: dev dev-backend dev-frontend build test lint clean setup start
 
-# Development
-dev: dev-backend dev-frontend
+# Development (run both servers concurrently)
+dev:
+	@echo "Starting backend on :8099 and frontend on :5173..."
+	@$(MAKE) dev-backend &
+	@$(MAKE) dev-frontend
 
 dev-backend:
-	cd backend && uvicorn main:app --reload --host 127.0.0.1 --port 8099
+	cd backend && python -m uvicorn main:app --reload --host 127.0.0.1 --port 8099
 
 dev-frontend:
 	cd frontend && npm run dev
@@ -12,6 +15,10 @@ dev-frontend:
 # Legacy (current v7)
 legacy:
 	python legacy/app.py
+
+# Production (single server serving built frontend + API)
+start:
+	cd backend && python -m uvicorn main:app --host 127.0.0.1 --port 8099
 
 # Build
 build: build-backend build-frontend
@@ -57,5 +64,5 @@ setup-frontend:
 # Clean
 clean:
 	rm -rf __pycache__ .pytest_cache .ruff_cache htmlcov .coverage
-	rm -rf frontend/node_modules frontend/dist
+	rm -rf frontend/node_modules frontend/dist backend/static
 	rm -rf .venv
