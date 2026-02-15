@@ -23,8 +23,10 @@ from .models import (
     DeleteCategoryRequest,
     DeleteProfileRequest,
     DiscoverServicesRequest,
+    DiscoverSsoRequest,
     EditCategoryRequest,
     GetCostRequest,
+    ImportSsoAccountsRequest,
     RemoveFavoriteRequest,
     RunCommandRequest,
     SetProfileCategoryRequest,
@@ -262,6 +264,16 @@ async def get_cost(req: GetCostRequest):
 @app.post("/api/fetch_cost_badges")
 async def fetch_cost_badges():
     return api.fetch_cost_badges()
+
+
+@app.post("/api/discover_sso_accounts")
+async def discover_sso_accounts(req: DiscoverSsoRequest):
+    return api.discover_sso_accounts(req.sso_start_url)
+
+
+@app.post("/api/import_sso_accounts")
+async def import_sso_accounts(req: ImportSsoAccountsRequest):
+    return api.import_sso_accounts(req.accounts)
 
 
 @app.post("/api/import")

@@ -1,6 +1,9 @@
 import { useMemo } from "react";
 import { useStore } from "@/store";
 import { ProfileItem } from "./ProfileItem";
+import { ChevronRight, Settings } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 export function ProfileList() {
   const profiles = useStore((s) => s.profiles);
@@ -46,94 +49,50 @@ export function ProfileList() {
     .map(([id]) => id);
 
   return (
-    <div style={{ flex: 1, overflowY: "auto", padding: "2px 6px 10px" }}>
+    <div className="flex-1 overflow-y-auto px-1.5 pb-2.5">
       {sortedCatIds.map((cid) => {
         const cat = categories[cid];
         const items = categorized[cid] || [];
         const isCollapsed = collapsed[cid];
 
         return (
-          <div key={cid} style={{ marginBottom: 2 }}>
+          <div key={cid} className="mb-0.5">
+            {/* Category header */}
             <div
               onClick={() => toggleCollapsed(cid)}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                height: 26,
-                padding: "0 6px",
-                cursor: "pointer",
-                borderRadius: "var(--r)",
-                userSelect: "none",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = "rgba(255,255,255,.03)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = "none";
-              }}
+              className="group flex items-center gap-1 h-7 px-1.5 cursor-pointer rounded-md select-none hover:bg-[var(--bg-2)]/50 transition-colors"
             >
-              <span
-                style={{
-                  fontSize: 7,
-                  color: "var(--t4)",
-                  width: 10,
-                  textAlign: "center",
-                  transition: "transform .12s",
-                  transform: isCollapsed ? "rotate(0deg)" : "rotate(90deg)",
-                  display: "inline-block",
-                }}
-              >
-                &#9654;
-              </span>
-              <span
-                style={{
-                  width: 6,
-                  height: 6,
-                  borderRadius: 2,
-                  background: cat.color,
-                  flexShrink: 0,
-                }}
+              <ChevronRight
+                className={cn(
+                  "w-3 h-3 text-[var(--t4)] shrink-0 transition-transform duration-150",
+                  !isCollapsed && "rotate-90"
+                )}
               />
               <span
-                style={{
-                  flex: 1,
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "var(--t3)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                }}
-              >
+                className="w-1.5 h-1.5 rounded-sm shrink-0"
+                style={{ background: cat.color }}
+              />
+              <span className="flex-1 text-[11px] font-semibold text-[var(--t3)] uppercase tracking-wider">
                 {cat.name}
               </span>
-              <span
-                style={{
-                  fontSize: 10,
-                  fontFamily: "var(--mono)",
-                  color: "var(--t4)",
-                }}
-              >
+              <Badge variant="outline" className="text-[9px] px-1 py-0 h-4 font-mono">
                 {items.length}
-              </span>
+              </Badge>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setDialog({ type: "category-editor", data: { cid, name: cat.name, color: cat.color } });
                 }}
-                style={{
-                  fontSize: 10,
-                  color: "var(--t4)",
-                  padding: "0 4px",
-                  display: "none",
-                }}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-0.5 rounded hover:bg-[var(--bg-3)] text-[var(--t4)]"
               >
-                ...
+                <Settings className="w-3 h-3" />
               </button>
             </div>
 
-            {!isCollapsed &&
-              items.map((name) => <ProfileItem key={name} name={name} />)}
+            {/* Category items */}
+            {!isCollapsed && items.map((name) => (
+              <ProfileItem key={name} name={name} />
+            ))}
           </div>
         );
       })}
@@ -141,24 +100,8 @@ export function ProfileList() {
       {uncategorized.length > 0 && (
         <div>
           {sortedCatIds.length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 4,
-                height: 26,
-                padding: "0 6px",
-              }}
-            >
-              <span
-                style={{
-                  fontSize: 11,
-                  fontWeight: 600,
-                  color: "var(--t4)",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.04em",
-                }}
-              >
+            <div className="flex items-center gap-1 h-7 px-1.5">
+              <span className="text-[11px] font-semibold text-[var(--t4)] uppercase tracking-wider">
                 Uncategorized
               </span>
             </div>

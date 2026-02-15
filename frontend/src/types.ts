@@ -40,6 +40,7 @@ export interface ServiceDef {
   icon: string;
   short: string;
   color: string;
+  desc: string;
   cmds: ServiceCmd[];
 }
 
@@ -73,12 +74,24 @@ export interface AppState {
   services_map: Record<string, ServiceDef>;
 }
 
+export interface SsoDiscoveredAccount {
+  account_id: string;
+  account_name: string;
+  account_email: string;
+  role_name: string;
+  suggested_profile_name: string;
+  already_exists: boolean;
+  sso_start_url: string;
+  sso_region: string;
+}
+
 export type DialogType =
   | "profile-editor"
   | "category-editor"
   | "cost-explorer"
   | "bulk-run"
   | "favorite-editor"
+  | "sso-discover"
   | null;
 
 export interface DialogState {

@@ -1,6 +1,9 @@
 import { useStore } from "@/store";
 import { ProfileList } from "./ProfileList";
 import { ResizeHandle } from "./ResizeHandle";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, FolderPlus, Play } from "lucide-react";
 
 export function Sidebar() {
   const search = useStore((s) => s.search);
@@ -10,72 +13,40 @@ export function Sidebar() {
   return (
     <div
       id="sidebar"
-      style={{
-        background: "var(--bg-1)",
-        borderRight: "1px solid var(--border)",
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        position: "relative",
-      }}
+      className="bg-[var(--bg-1)] border-r border-[var(--border)] flex flex-col overflow-hidden relative"
     >
-      <div style={{ padding: "8px 10px 4px", flexShrink: 0 }}>
-        <div style={{ position: "relative" }}>
-          <span
-            style={{
-              position: "absolute",
-              left: 8,
-              top: "50%",
-              transform: "translateY(-50%)",
-              color: "var(--t4)",
-              fontSize: 11,
-              pointerEvents: "none",
-            }}
-          >
-            &#x1F50D;
-          </span>
-          <input
+      {/* Search + actions */}
+      <div className="px-2.5 pt-2 pb-1 shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--t4)] pointer-events-none" />
+          <Input
             type="text"
             placeholder="Search profiles..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              width: "100%",
-              height: 28,
-              padding: "0 8px 0 26px",
-              background: "var(--bg-0)",
-              border: "1px solid transparent",
-              borderRadius: "var(--r)",
-              color: "var(--t1)",
-              fontSize: 12,
-              outline: "none",
-            }}
+            className="pl-8 h-7 text-[12px]"
           />
         </div>
 
-        <div style={{ display: "flex", gap: 2, padding: "6px 0 2px" }}>
-          <button
+        <div className="flex gap-1 pt-1.5 pb-0.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-[11px] text-[var(--t3)] h-6 px-2 gap-1"
             onClick={() => setDialog({ type: "category-editor", data: {} })}
-            style={{
-              fontSize: 11,
-              color: "var(--t3)",
-              padding: "2px 6px",
-              borderRadius: "var(--r)",
-            }}
           >
-            + Category
-          </button>
-          <button
+            <FolderPlus className="w-3 h-3" />
+            Category
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-[11px] text-[var(--t3)] h-6 px-2 gap-1"
             onClick={() => setDialog({ type: "bulk-run", data: {} })}
-            style={{
-              fontSize: 11,
-              color: "var(--t3)",
-              padding: "2px 6px",
-              borderRadius: "var(--r)",
-            }}
           >
+            <Play className="w-3 h-3" />
             Bulk Run
-          </button>
+          </Button>
         </div>
       </div>
 

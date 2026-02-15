@@ -1,6 +1,18 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useStore } from "@/store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { Play } from "lucide-react";
 
 interface Props {
   onClose: () => void;
@@ -36,153 +48,77 @@ export function BulkRun({ onClose }: Props) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.15 }}
-        style={{
-          background: "var(--bg-1)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
-          padding: 24,
-          width: 420,
-          maxHeight: "80vh",
-          overflowY: "auto",
-        }}
-      >
-        <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Bulk Run</h2>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[420px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Bulk Run</DialogTitle>
+          <DialogDescription>Run a command across multiple profiles</DialogDescription>
+        </DialogHeader>
 
-        <div style={{ marginBottom: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <label style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)" }}>Profiles</label>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button onClick={selectAll} style={{ fontSize: 10, color: "var(--ac)" }}>All</button>
-              <button onClick={selectNone} style={{ fontSize: 10, color: "var(--t3)" }}>None</button>
+        <div className="space-y-3">
+          {/* Profile selector */}
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <label className="text-[11px] font-medium text-[var(--t3)]">Profiles</label>
+              <div className="flex gap-2">
+                <button onClick={selectAll} className="text-[10px] text-[var(--ac)] hover:underline">All</button>
+                <button onClick={selectNone} className="text-[10px] text-[var(--t3)] hover:underline">None</button>
+              </div>
+            </div>
+            <div className="max-h-[180px] overflow-y-auto border border-[var(--border)] rounded-md p-1 space-y-0.5">
+              {profileNames.map((name) => (
+                <label
+                  key={name}
+                  className="flex items-center gap-2.5 px-2 py-1 rounded-md cursor-pointer text-[12px] hover:bg-[var(--bg-2)]/50 transition-colors"
+                >
+                  <Checkbox
+                    checked={selected.includes(name)}
+                    onCheckedChange={() => toggleProfile(name)}
+                  />
+                  {name}
+                </label>
+              ))}
             </div>
           </div>
-          <div
-            style={{
-              maxHeight: 180,
-              overflowY: "auto",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              padding: 4,
-            }}
-          >
-            {profileNames.map((name) => (
-              <label
-                key={name}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "4px 8px",
-                  borderRadius: "var(--r)",
-                  cursor: "pointer",
-                  fontSize: 12,
-                }}
+
+          {/* Command input */}
+          <div>
+            <label className="block text-[11px] font-medium text-[var(--t3)] mb-1">Command</label>
+            <Input
+              value={cmd}
+              onChange={(e) => setCmd(e.target.value)}
+              placeholder="aws ..."
+              className="font-mono"
+            />
+          </div>
+
+          {/* Quick templates */}
+          <div className="flex gap-1.5">
+            {QUICK_TEMPLATES.map((t) => (
+              <Badge
+                key={t.label}
+                variant="outline"
+                className="cursor-pointer hover:bg-[var(--bg-2)] transition-colors"
+                onClick={() => setCmd(t.cmd)}
               >
-                <input
-                  type="checkbox"
-                  checked={selected.includes(name)}
-                  onChange={() => toggleProfile(name)}
-                />
-                {name}
-              </label>
+                {t.label}
+              </Badge>
             ))}
           </div>
         </div>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginBottom: 4, display: "block" }}>
-            Command
-          </label>
-          <input
-            type="text"
-            value={cmd}
-            onChange={(e) => setCmd(e.target.value)}
-            placeholder="aws ..."
-            style={{
-              width: "100%",
-              height: 32,
-              padding: "0 10px",
-              background: "var(--bg-0)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              color: "var(--t1)",
-              fontFamily: "var(--mono)",
-              fontSize: 12,
-              outline: "none",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", gap: 4, marginBottom: 16 }}>
-          {QUICK_TEMPLATES.map((t) => (
-            <button
-              key={t.label}
-              onClick={() => setCmd(t.cmd)}
-              style={{
-                fontSize: 11,
-                color: "var(--t3)",
-                padding: "4px 8px",
-                borderRadius: "var(--r)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button
-            onClick={onClose}
-            style={{
-              height: 32,
-              padding: "0 16px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--t2)",
-              borderRadius: "var(--r)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            Cancel
-          </button>
-          <button
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button
             onClick={handleRun}
             disabled={selected.length === 0 || !cmd.trim()}
-            style={{
-              height: 32,
-              padding: "0 16px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "#fff",
-              background: "var(--ac)",
-              borderRadius: "var(--r)",
-              opacity: selected.length > 0 && cmd.trim() ? 1 : 0.5,
-            }}
+            className="gap-1"
           >
+            <Play className="w-3.5 h-3.5" />
             Run on {selected.length} profile{selected.length !== 1 ? "s" : ""}
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

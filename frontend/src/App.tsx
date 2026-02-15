@@ -7,11 +7,13 @@ import { MainContent } from "@/components/MainContent";
 import { DialogManager } from "@/components/dialogs/DialogManager";
 import { DetailSheet } from "@/components/DetailSheet";
 import { Toast } from "@/components/Toast";
+import { CommandPalette } from "@/components/CommandPalette";
 
 export default function App() {
   const init = useStore((s) => s.init);
   const setDialog = useStore((s) => s.setDialog);
   const setDetailProfile = useStore((s) => s.setDetailProfile);
+  const setCommandPaletteOpen = useStore((s) => s.setCommandPaletteOpen);
   useSSE();
 
   useEffect(() => {
@@ -25,6 +27,11 @@ export default function App() {
       if (e.key === "Escape") {
         setDialog({ type: null });
         setDetailProfile(null);
+      }
+      // Ctrl+K opens command palette
+      if (e.key === "k" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
       }
       // Ctrl+/ focuses terminal
       if (e.key === "/" && (e.ctrlKey || e.metaKey)) {
@@ -40,17 +47,15 @@ export default function App() {
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [setDialog, setDetailProfile]);
+  }, [setDialog, setDetailProfile, setCommandPaletteOpen]);
 
   return (
     <div
       id="app"
+      className="grid h-screen relative"
       style={{
-        display: "grid",
         gridTemplateRows: "44px 1fr",
         gridTemplateColumns: "var(--sidebar-w) 1fr",
-        height: "100vh",
-        position: "relative",
       }}
     >
       <Header />
@@ -59,6 +64,7 @@ export default function App() {
       <DialogManager />
       <DetailSheet />
       <Toast />
+      <CommandPalette />
     </div>
   );
 }

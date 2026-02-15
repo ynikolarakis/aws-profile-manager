@@ -1,6 +1,28 @@
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useEffect } from "react";
 import { useStore } from "@/store";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ChevronRight, Star, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+const typeColors: Record<string, string> = {
+  sso: "var(--green)",
+  credentials: "var(--violet)",
+  role: "var(--amber)",
+};
+
+const typeVariant: Record<string, "success" | "warning" | "outline"> = {
+  sso: "success",
+  credentials: "outline",
+  role: "warning",
+};
 
 export function DetailSheet() {
   const detailProfile = useStore((s) => s.detailProfile);
@@ -13,9 +35,10 @@ export function DetailSheet() {
   const runCommand = useStore((s) => s.runCommand);
   const addFavorite = useStore((s) => s.addFavorite);
   const discoverServices = useStore((s) => s.discoverServices);
-
-  const [services, setServices] = useState<Array<{ name: string; cost: number | null }>>([]);
-  const [expandedSvc, setExpandedSvc] = useState<string | null>(null);
+  const discoveredServices = useStore((s) => s.discoveredServices);
+  const discoveredServicesProfile = useStore((s) => s.discoveredServicesProfile);
+  const servicesLoading = useStore((s) => s.servicesLoading);
+  const [expandedSvc, setExpandedSvc] = React.useState<string | null>(null);
 
   const profile = detailProfile ? profiles[detailProfile] : null;
 
@@ -25,36 +48,12 @@ export function DetailSheet() {
     }
   }, [detailProfile, discoverServices]);
 
-  // Listen for services SSE event
-  useEffect(() => {
-    const handler = (e: Event) => {
-      const customEvent = e as CustomEvent;
-      if (customEvent.detail?.profile === detailProfile) {
-        setServices(customEvent.detail.svcs || []);
-      }
-    };
-    window.addEventListener("aws-services", handler);
-    return () => window.removeEventListener("aws-services", handler);
-  }, [detailProfile]);
-
-  // Also listen via store SSE
-  useEffect(() => {
-    const unsub = useStore.subscribe((state, prev) => {
-      // Services updates come through SSE
-      if (state !== prev) {
-        // No-op, just trigger re-render
-      }
-    });
-    return unsub;
-  }, []);
+  const services =
+    discoveredServicesProfile === detailProfile
+      ? discoveredServices
+      : [];
 
   if (!detailProfile || !profile) return null;
-
-  const typeColors: Record<string, string> = {
-    sso: "var(--green)",
-    credentials: "var(--violet)",
-    role: "var(--amber)",
-  };
 
   const details = [
     { label: "Type", value: profile.type },
@@ -79,170 +78,131 @@ export function DetailSheet() {
   ];
 
   return (
-    <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        style={{
-          position: "fixed",
-          inset: 0,
-          background: "rgba(0,0,0,.3)",
-          zIndex: 50,
-        }}
-        onClick={() => setDetailProfile(null)}
-      />
-      <motion.div
-        initial={{ x: "100%" }}
-        animate={{ x: 0 }}
-        exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
-        style={{
-          position: "fixed",
-          top: 0,
-          right: 0,
-          bottom: 0,
-          width: 380,
-          background: "var(--bg-1)",
-          borderLeft: "1px solid var(--border)",
-          zIndex: 51,
-          overflowY: "auto",
-          padding: 24,
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600 }}>{detailProfile}</h2>
-          <button
-            onClick={() => setDetailProfile(null)}
-            style={{ fontSize: 16, color: "var(--t3)" }}
-          >
-            &#x2715;
-          </button>
-        </div>
+    <Sheet open onOpenChange={(open) => !open && setDetailProfile(null)}>
+      <SheetContent side="right" className="overflow-y-auto p-6">
+        <SheetHeader>
+          <div className="flex items-center gap-2">
+            <div
+              className="w-8 h-8 rounded-lg opacity-20"
+              style={{ background: typeColors[profile.type] || "var(--t4)" }}
+            />
+            <div>
+              <SheetTitle>{detailProfile}</SheetTitle>
+              <SheetDescription>
+                <Badge variant={typeVariant[profile.type] || "outline"} className="mt-1">
+                  {profile.type}
+                </Badge>
+              </SheetDescription>
+            </div>
+          </div>
+        </SheetHeader>
 
-        <div
-          style={{
-            width: 48,
-            height: 48,
-            borderRadius: "var(--r-lg)",
-            background: typeColors[profile.type] || "var(--t4)",
-            opacity: 0.15,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            marginBottom: 16,
-          }}
-        />
-
-        <div style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: "8px 12px", marginBottom: 20 }}>
+        {/* Details grid */}
+        <div className="grid grid-cols-[80px_1fr] gap-x-3 gap-y-1.5 mb-5">
           {details.map((d) => (
-            <div key={d.label} style={{ display: "contents" }}>
-              <span style={{ fontSize: 11, color: "var(--t3)" }}>{d.label}</span>
-              <span style={{ fontSize: 12, fontFamily: "var(--mono)", color: "var(--t1)", wordBreak: "break-all" }}>
+            <div key={d.label} className="contents">
+              <span className="text-[11px] text-[var(--t3)]">{d.label}</span>
+              <span className="text-[12px] font-mono text-[var(--t1)] break-all">
                 {d.value}
               </span>
             </div>
           ))}
         </div>
 
-        <div style={{ marginBottom: 20 }}>
-          <label style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginBottom: 4, display: "block" }}>
-            Category
-          </label>
-          <select
+        {/* Category */}
+        <div className="mb-5">
+          <label className="block text-[11px] font-medium text-[var(--t3)] mb-1">Category</label>
+          <Select
             value={profileCat[detailProfile] || "__none__"}
-            onChange={(e) => setProfileCategory(detailProfile, e.target.value)}
-            style={{
-              width: "100%",
-              height: 32,
-              padding: "0 10px",
-              background: "var(--bg-0)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              color: "var(--t1)",
-              fontSize: 12,
-              outline: "none",
-            }}
+            onValueChange={(val) => setProfileCategory(detailProfile, val)}
           >
-            <option value="__none__">None</option>
-            {Object.entries(categories).map(([id, cat]) => (
-              <option key={id} value={id}>{cat.name}</option>
-            ))}
-          </select>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none__">None</SelectItem>
+              {Object.entries(categories).map(([id, cat]) => (
+                <SelectItem key={id} value={id}>{cat.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <h3 style={{ fontSize: 12, fontWeight: 600, color: "var(--t3)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 8 }}>
-          Services
+        {/* Services */}
+        <h3 className="text-[12px] font-semibold text-[var(--t3)] uppercase tracking-wider mb-2">
+          Services{!servicesLoading && services.length > 0 && ` (${services.length})`}
         </h3>
 
-        {(services.length > 0 ? services : Object.keys(servicesMap).slice(0, 6).map((n) => ({ name: n, cost: null }))).map((svc) => {
-          const svcDef = servicesMap[svc.name];
-          if (!svcDef) return null;
+        {servicesLoading ? (
+          <div className="flex items-center gap-2 py-4 text-[var(--t4)]">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-[11px]">Discovering services...</span>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {services.map((svc) => {
+              const svcDef = servicesMap[svc.name] || {
+                icon: "☁️",
+                short: svc.name.replace(/^Amazon /, "").replace(/^AWS /, ""),
+                color: "#71717a",
+                desc: "",
+                cmds: [],
+              };
 
-          const isExpanded = expandedSvc === svc.name;
+              const isExpanded = expandedSvc === svc.name;
 
-          return (
-            <div key={svc.name} style={{ marginBottom: 4 }}>
-              <button
-                onClick={() => setExpandedSvc(isExpanded ? null : svc.name)}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  width: "100%",
-                  padding: "6px 8px",
-                  borderRadius: "var(--r)",
-                  textAlign: "left",
-                  transition: "background .08s",
-                }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-2)"; }}
-                onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
-              >
-                <span style={{ fontSize: 14 }}>{svcDef.icon}</span>
-                <span style={{ flex: 1, fontSize: 12, fontWeight: 500 }}>{svcDef.short}</span>
-                {svc.cost !== null && (
-                  <span style={{ fontSize: 10, fontFamily: "var(--mono)", color: "var(--t3)" }}>
-                    ${svc.cost.toFixed(2)}
-                  </span>
-                )}
-              </button>
-
-              {isExpanded && (
-                <div style={{ paddingLeft: 28, paddingBottom: 4 }}>
-                  {svcDef.cmds.map((cmd) => (
-                    <div
-                      key={cmd[0]}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 4,
-                        padding: "3px 0",
-                      }}
-                    >
-                      <button
-                        onClick={() => runCommand(cmd[1])}
-                        style={{
-                          fontSize: 11,
-                          color: "var(--ac)",
-                          textAlign: "left",
-                        }}
-                      >
-                        {cmd[0]}
-                      </button>
-                      <button
-                        onClick={() => addFavorite(cmd[0], cmd[1])}
-                        style={{ fontSize: 10, color: "var(--t4)", marginLeft: "auto" }}
-                      >
-                        &#9733;
-                      </button>
+              return (
+                <div key={svc.name}>
+                  <button
+                    onClick={() => setExpandedSvc(isExpanded ? null : svc.name)}
+                    className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-left hover:bg-[var(--bg-2)] transition-colors"
+                  >
+                    <ChevronRight
+                      className={cn(
+                        "w-3 h-3 text-[var(--t4)] shrink-0 transition-transform duration-150",
+                        isExpanded && "rotate-90"
+                      )}
+                    />
+                    <span className="text-[14px]">{svcDef.icon}</span>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[12px] font-medium block">{svcDef.short}</span>
+                      {svcDef.desc && (
+                        <span className="text-[10px] text-[var(--t4)] block truncate">
+                          {svcDef.desc}
+                        </span>
+                      )}
                     </div>
-                  ))}
+                    {svc.cost !== null && (
+                      <span className="text-[10px] font-mono text-[var(--t3)] shrink-0">
+                        ${svc.cost.toFixed(2)}
+                      </span>
+                    )}
+                  </button>
+
+                  {isExpanded && svcDef.cmds.length > 0 && (
+                    <div className="pl-8 pb-1 space-y-0.5">
+                      {svcDef.cmds.map((cmd) => (
+                        <div key={cmd[0]} className="flex items-center gap-1 py-0.5">
+                          <button
+                            onClick={() => runCommand(cmd[1])}
+                            className="text-[11px] text-[var(--ac)] hover:underline text-left"
+                          >
+                            {cmd[0]}
+                          </button>
+                          <button
+                            onClick={() => addFavorite(cmd[0], cmd[1])}
+                            className="ml-auto text-[var(--t4)] hover:text-[var(--amber)] transition-colors"
+                          >
+                            <Star className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          );
-        })}
-      </motion.div>
-    </AnimatePresence>
+              );
+            })}
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

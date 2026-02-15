@@ -1,4 +1,6 @@
 import { useStore } from "@/store";
+import { Badge } from "@/components/ui/badge";
+import { Star, X } from "lucide-react";
 
 export function FavoritesBar() {
   const favorites = useStore((s) => s.favorites);
@@ -8,45 +10,15 @@ export function FavoritesBar() {
   if (favorites.length === 0) return null;
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-        padding: "4px 14px",
-        borderBottom: "1px solid var(--border)",
-        background: "var(--bg-1)",
-        flexShrink: 0,
-        overflowX: "auto",
-      }}
-    >
+    <div className="flex items-center gap-1.5 px-3.5 py-1 border-b border-[var(--border)] bg-[var(--bg-1)] shrink-0 overflow-x-auto">
       {favorites.map((fav) => (
-        <div
+        <Badge
           key={fav.cmd}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 4,
-            height: 24,
-            padding: "0 8px",
-            borderRadius: "var(--r)",
-            border: "1px solid var(--border)",
-            fontSize: 11,
-            fontWeight: 500,
-            whiteSpace: "nowrap",
-            cursor: "pointer",
-            transition: "all .1s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = "var(--border-h)";
-            e.currentTarget.style.background = "var(--bg-2)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = "var(--border)";
-            e.currentTarget.style.background = "none";
-          }}
+          variant="outline"
+          className="shrink-0 gap-1 cursor-pointer hover:bg-[var(--bg-2)] transition-colors group"
         >
-          <span onClick={() => runCommand(fav.cmd)} style={{ color: "var(--t2)" }}>
+          <Star className="w-2.5 h-2.5 text-[var(--amber)] opacity-60" />
+          <span onClick={() => runCommand(fav.cmd)} className="text-[var(--t2)]">
             {fav.label}
           </span>
           <button
@@ -54,16 +26,11 @@ export function FavoritesBar() {
               e.stopPropagation();
               removeFavorite(fav.cmd);
             }}
-            style={{
-              fontSize: 10,
-              color: "var(--t4)",
-              padding: 0,
-              lineHeight: 1,
-            }}
+            className="text-[var(--t4)] hover:text-[var(--red)] transition-colors opacity-0 group-hover:opacity-100 -mr-0.5"
           >
-            x
+            <X className="w-2.5 h-2.5" />
           </button>
-        </div>
+        </Badge>
       ))}
     </div>
   );

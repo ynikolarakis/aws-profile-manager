@@ -6,6 +6,8 @@ import type {
   CostData,
   DialogState,
   Identity,
+  ServiceDef,
+  SsoDiscoveredAccount,
   TerminalLine,
 } from "@/types";
 
@@ -16,12 +18,19 @@ interface Store extends AppState {
   ssoStatus: Record<string, string>;
   costBadges: Record<string, string>;
   detailProfile: string | null;
+  discoveredServices: Array<{ name: string; cost: number | null }>;
+  discoveredServicesProfile: string | null;
+  servicesLoading: boolean;
   dialog: DialogState;
   search: string;
   terminalLines: TerminalLine[];
   terminalBusy: boolean;
   terminalHistory: string[];
   lineCounter: number;
+  commandPaletteOpen: boolean;
+  ssoDiscoveredAccounts: SsoDiscoveredAccount[];
+  ssoDiscoverLoading: boolean;
+  ssoDiscoverError: string | null;
 
   // Actions
   init: () => Promise<void>;
@@ -42,6 +51,8 @@ interface Store extends AppState {
   discoverServices: (profile?: string) => Promise<void>;
   getCost: (profile: string, year: number, month: number) => Promise<void>;
   fetchCostBadges: () => Promise<void>;
+  discoverSsoAccounts: (ssoStartUrl?: string) => Promise<void>;
+  importSsoAccounts: (accounts: Array<Record<string, string>>) => Promise<{ ok?: boolean; count?: number; error?: string }>;
 
   // UI actions
   setSearch: (s: string) => void;
@@ -50,6 +61,7 @@ interface Store extends AppState {
   clearTerminal: () => void;
   addTerminalLine: (text: string, type: TerminalLine["type"]) => void;
   setTerminalBusy: (v: boolean) => void;
+  setCommandPaletteOpen: (open: boolean) => void;
 
   // SSE event handlers
   handleSSE: (event: string, data: Record<string, unknown>) => void;
@@ -71,12 +83,19 @@ export const useStore = create<Store>((set, _get) => ({
   ssoStatus: {},
   costBadges: {},
   detailProfile: null,
+  discoveredServices: [],
+  discoveredServicesProfile: null,
+  servicesLoading: false,
   dialog: { type: null },
   search: "",
   terminalLines: [],
   terminalBusy: false,
   terminalHistory: [],
   lineCounter: 0,
+  commandPaletteOpen: false,
+  ssoDiscoveredAccounts: [],
+  ssoDiscoverLoading: false,
+  ssoDiscoverError: null,
 
   init: async () => {
     const state = await get<AppState>("/state");
@@ -197,6 +216,7 @@ export const useStore = create<Store>((set, _get) => ({
   },
 
   discoverServices: async (profile) => {
+    set({ servicesLoading: true });
     await post("/discover_services", { profile: profile || null });
   },
 
@@ -207,6 +227,24 @@ export const useStore = create<Store>((set, _get) => ({
 
   fetchCostBadges: async () => {
     await post("/fetch_cost_badges", {});
+  },
+
+  discoverSsoAccounts: async (ssoStartUrl) => {
+    set({ ssoDiscoverLoading: true, ssoDiscoverError: null, ssoDiscoveredAccounts: [] });
+    await post("/discover_sso_accounts", { sso_start_url: ssoStartUrl || null });
+  },
+
+  importSsoAccounts: async (accounts) => {
+    const result = await post<{ ok?: boolean; count?: number; error?: string }>("/import_sso_accounts", { accounts });
+    if (result.ok) {
+      const state = await get<AppState>("/state");
+      set({
+        profiles: state.profiles,
+        categories: state.categories,
+        profile_cat: state.profile_cat,
+      });
+    }
+    return result;
   },
 
   // UI actions
@@ -220,6 +258,7 @@ export const useStore = create<Store>((set, _get) => ({
       lineCounter: s.lineCounter + 1,
     })),
   setTerminalBusy: (v) => set({ terminalBusy: v }),
+  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
 
   // SSE event handlers
   handleSSE: (event, data) => {
@@ -244,9 +283,22 @@ export const useStore = create<Store>((set, _get) => ({
       case "identity":
         set({ identity: data as unknown as Identity });
         break;
-      case "services":
-        // Handled by detail sheet if open
+      case "services": {
+        const svcData = data as {
+          svcs: Array<{ name: string; cost: number | null }>;
+          profile: string;
+          svc_defs?: Record<string, ServiceDef>;
+        };
+        set((s) => ({
+          discoveredServices: svcData.svcs,
+          discoveredServicesProfile: svcData.profile,
+          servicesLoading: false,
+          services_map: svcData.svc_defs
+            ? { ...s.services_map, ...svcData.svc_defs }
+            : s.services_map,
+        }));
         break;
+      }
       case "cost_data":
         set({ costData: data as unknown as CostData });
         break;
@@ -261,6 +313,15 @@ export const useStore = create<Store>((set, _get) => ({
       case "sso_status":
         set({ ssoStatus: data as Record<string, string> });
         break;
+      case "sso_accounts": {
+        const ssoData = data as { accounts?: SsoDiscoveredAccount[]; error?: string | null };
+        set({
+          ssoDiscoveredAccounts: ssoData.accounts || [],
+          ssoDiscoverLoading: false,
+          ssoDiscoverError: ssoData.error || null,
+        });
+        break;
+      }
     }
   },
 }));

@@ -1,6 +1,8 @@
 import { useState, type MouseEvent } from "react";
 import { useStore } from "@/store";
 import { ContextMenu } from "./ContextMenu";
+import { MoreHorizontal } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface Props {
   name: string;
@@ -43,21 +45,31 @@ export function ProfileItem({ name }: Props) {
   };
 
   const menuItems = [
-    { label: "View Details", action: () => setDetailProfile(name) },
+    { label: "View Details", icon: "eye", action: () => setDetailProfile(name) },
     ...(profile.type === "sso"
-      ? [{ label: "SSO Login", action: () => runCommand(`aws sso login --profile ${name}`) }]
+      ? [
+          { label: "SSO Login", icon: "log-in", action: () => runCommand(`aws sso login --profile ${name}`) },
+          {
+            label: "Discover Accounts",
+            icon: "radar",
+            action: () => setDialog({ type: "sso-discover", data: { sso_start_url: profile.sso_start_url } }),
+          },
+        ]
       : []),
     {
       label: "Cost Explorer",
+      icon: "dollar-sign",
       action: () => setDialog({ type: "cost-explorer", data: { profile: name } }),
     },
     { separator: true as const },
     {
       label: "Edit",
+      icon: "pencil",
       action: () => setDialog({ type: "profile-editor", data: { profile: name } }),
     },
     {
       label: "Delete",
+      icon: "trash-2",
       danger: true,
       action: () => {
         if (window.confirm(`Delete profile "${name}"?`)) {
@@ -72,96 +84,43 @@ export function ProfileItem({ name }: Props) {
       <div
         onClick={handleClick}
         onContextMenu={handleContextMenu}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-          height: 32,
-          padding: "0 6px 0 20px",
-          borderRadius: "var(--r)",
-          cursor: "pointer",
-          position: "relative",
-          transition: "all .08s var(--ease)",
-          background: isActive ? "var(--ac-dim)" : undefined,
-        }}
-        onMouseEnter={(e) => {
-          if (!isActive) e.currentTarget.style.background = "rgba(255,255,255,.035)";
-        }}
-        onMouseLeave={(e) => {
-          if (!isActive) e.currentTarget.style.background = "none";
-        }}
-      >
-        {isActive && (
-          <span
-            style={{
-              position: "absolute",
-              left: 7,
-              top: "50%",
-              transform: "translateY(-50%)",
-              width: 4,
-              height: 4,
-              borderRadius: "50%",
-              background: "var(--ac)",
-              boxShadow: "0 0 6px var(--ac-glow)",
-            }}
-          />
+        className={cn(
+          "group flex items-center gap-1.5 h-8 pl-4 pr-1.5 rounded-md cursor-pointer relative transition-all duration-75",
+          isActive
+            ? "bg-[var(--ac-dim)] border-l-2 border-l-[var(--ac)] pl-[14px]"
+            : "hover:bg-[var(--bg-2)]/50"
         )}
-
+      >
+        {/* Type indicator dot */}
         <span
+          className="w-[6px] h-[6px] rounded-full shrink-0"
           style={{
-            width: 3,
-            height: 16,
-            borderRadius: 1,
-            flexShrink: 0,
-            opacity: 0.5,
             background: typeColors[profile.type] || "var(--t4)",
+            opacity: isActive ? 1 : 0.6,
           }}
         />
 
-        <span
-          style={{
-            flex: 1,
-            fontSize: 12.5,
-            fontWeight: 500,
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {name}
-        </span>
+        {/* Profile info */}
+        <div className="flex-1 min-w-0">
+          <div className="text-[12.5px] font-medium truncate">{name}</div>
+          <div className="text-[10px] text-[var(--t3)] truncate leading-tight -mt-0.5">
+            {profile.region} · {profile.type}
+          </div>
+        </div>
 
+        {/* Cost badge */}
         {cost && (
-          <span
-            style={{
-              fontFamily: "var(--mono)",
-              fontSize: 9,
-              color: "var(--t4)",
-              fontWeight: 500,
-              flexShrink: 0,
-            }}
-          >
+          <span className="font-mono text-[9px] text-[var(--t4)] font-medium shrink-0">
             {cost}
           </span>
         )}
 
+        {/* More button */}
         <button
           onClick={handleMore}
-          style={{
-            width: 24,
-            height: 24,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: "var(--r)",
-            color: "var(--t4)",
-            fontSize: 14,
-            fontWeight: 700,
-            flexShrink: 0,
-            letterSpacing: 1,
-          }}
+          className="w-6 h-6 flex items-center justify-center rounded-md text-[var(--t4)] opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-3)] transition-all shrink-0"
         >
-          ...
+          <MoreHorizontal className="w-3.5 h-3.5" />
         </button>
       </div>
 

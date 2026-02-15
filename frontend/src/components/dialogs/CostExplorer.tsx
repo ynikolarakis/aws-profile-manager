@@ -1,6 +1,15 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { useStore } from "@/store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 interface Props {
   data: Record<string, unknown>;
@@ -29,103 +38,66 @@ export function CostExplorer({ data, onClose }: Props) {
   const maxCost = costData?.services?.[0]?.cost || 1;
 
   const handlePrev = () => {
-    if (month === 1) {
-      setYear(year - 1);
-      setMonth(12);
-    } else {
-      setMonth(month - 1);
-    }
+    if (month === 1) { setYear(year - 1); setMonth(12); }
+    else setMonth(month - 1);
   };
 
   const handleNext = () => {
-    if (month === 12) {
-      setYear(year + 1);
-      setMonth(1);
-    } else {
-      setMonth(month + 1);
-    }
+    if (month === 12) { setYear(year + 1); setMonth(1); }
+    else setMonth(month + 1);
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        transition={{ duration: 0.15 }}
-        style={{
-          background: "var(--bg-1)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
-          padding: 24,
-          width: 480,
-          maxHeight: "80vh",
-          overflowY: "auto",
-        }}
-      >
-        <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 4 }}>
-          Cost Explorer
-        </h2>
-        <div style={{ fontSize: 12, color: "var(--t3)", marginBottom: 16 }}>
-          {profile}
-        </div>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[480px] max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Cost Explorer</DialogTitle>
+          <DialogDescription className="font-mono">{profile}</DialogDescription>
+        </DialogHeader>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
-          <button onClick={handlePrev} style={{ fontSize: 14, color: "var(--t2)", padding: "4px 8px", borderRadius: "var(--r)", border: "1px solid var(--border)" }}>
-            &#8592;
-          </button>
-          <span style={{ fontSize: 13, fontWeight: 500 }}>
+        {/* Month navigator */}
+        <div className="flex items-center gap-3 mb-3">
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={handlePrev}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <span className="text-[13px] font-medium font-mono">
             {year}-{String(month).padStart(2, "0")}
           </span>
-          <button onClick={handleNext} style={{ fontSize: 14, color: "var(--t2)", padding: "4px 8px", borderRadius: "var(--r)", border: "1px solid var(--border)" }}>
-            &#8594;
-          </button>
+          <Button variant="outline" size="icon" className="h-7 w-7" onClick={handleNext}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
 
         {loading ? (
-          <div style={{ textAlign: "center", padding: 40, color: "var(--t3)" }}>Loading...</div>
+          <div className="flex items-center justify-center py-10 text-[var(--t3)] gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-[12px]">Loading cost data...</span>
+          </div>
         ) : costData?.error ? (
-          <div style={{ textAlign: "center", padding: 40, color: "var(--red)" }}>{costData.error}</div>
+          <div className="text-center py-10 text-[var(--red)] text-[12px]">{costData.error}</div>
         ) : (
           <>
-            <div style={{ fontSize: 28, fontWeight: 700, color: "var(--ac)", marginBottom: 16 }}>
+            {/* Total */}
+            <div className="text-[28px] font-bold text-[var(--ac)] mb-4">
               ${costData?.total?.toFixed(2)}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {/* Service breakdown */}
+            <div className="space-y-2.5">
               {costData?.services?.map((svc) => (
                 <div key={svc.name}>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 2 }}>
-                    <span style={{ fontSize: 11, color: "var(--t2)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 300 }}>
+                  <div className="flex justify-between mb-0.5">
+                    <span className="text-[11px] text-[var(--t2)] truncate max-w-[300px]">
                       {svc.name}
                     </span>
-                    <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--t3)" }}>
+                    <span className="text-[11px] font-mono text-[var(--t3)]">
                       ${svc.cost.toFixed(2)}
                     </span>
                   </div>
-                  <div style={{ height: 4, borderRadius: 2, background: "var(--bg-3)", overflow: "hidden" }}>
+                  <div className="h-1 rounded-full bg-[var(--bg-3)] overflow-hidden">
                     <div
-                      style={{
-                        height: "100%",
-                        width: `${(svc.cost / maxCost) * 100}%`,
-                        background: "var(--ac)",
-                        borderRadius: 2,
-                        transition: "width .3s var(--ease)",
-                      }}
+                      className="h-full bg-[var(--ac)] rounded-full transition-all duration-300"
+                      style={{ width: `${(svc.cost / maxCost) * 100}%` }}
                     />
                   </div>
                 </div>
@@ -134,23 +106,10 @@ export function CostExplorer({ data, onClose }: Props) {
           </>
         )}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 20 }}>
-          <button
-            onClick={onClose}
-            style={{
-              height: 32,
-              padding: "0 16px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--t2)",
-              borderRadius: "var(--r)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            Close
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

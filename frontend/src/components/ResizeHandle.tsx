@@ -29,15 +29,7 @@ export function ResizeHandle() {
   return (
     <div
       onMouseDown={handleMouseDown}
-      style={{
-        position: "absolute",
-        top: 0,
-        right: -3,
-        bottom: 0,
-        width: 6,
-        cursor: "col-resize",
-        zIndex: 15,
-      }}
+      className="absolute top-0 -right-[3px] bottom-0 w-1.5 cursor-col-resize z-[15] hover:bg-[var(--ac)]/20 transition-colors"
     />
   );
 }

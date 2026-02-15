@@ -1,5 +1,8 @@
 import { useState, useRef, type KeyboardEvent } from "react";
 import { useStore } from "@/store";
+import { Button } from "@/components/ui/button";
+import { Play } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function TerminalInput() {
   const [input, setInput] = useState("");
@@ -36,20 +39,8 @@ export function TerminalInput() {
   };
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "8px 14px",
-        borderTop: "1px solid var(--border)",
-        background: "var(--bg-1)",
-        flexShrink: 0,
-      }}
-    >
-      <span style={{ color: "var(--ac)", fontFamily: "var(--mono)", fontSize: 13 }}>
-        &#10095;
-      </span>
+    <div className="flex items-center gap-2 px-3.5 py-2 border-t border-[var(--border)] bg-[var(--bg-1)] shrink-0">
+      <span className="text-[var(--ac)] font-mono text-[13px] font-medium">&#10095;</span>
       <input
         ref={inputRef}
         type="text"
@@ -58,38 +49,31 @@ export function TerminalInput() {
         onKeyDown={handleKeyDown}
         disabled={terminalBusy}
         placeholder={terminalBusy ? "Running..." : "Type a command..."}
-        style={{
-          flex: 1,
-          background: "none",
-          border: "none",
-          outline: "none",
-          color: "var(--t1)",
-          fontFamily: "var(--mono)",
-          fontSize: 12,
-          opacity: terminalBusy ? 0.5 : 1,
-        }}
+        className={cn(
+          "flex-1 bg-transparent border-none outline-none text-[var(--t1)] font-mono text-[12px]",
+          "placeholder:text-[var(--t4)] disabled:opacity-50",
+          "focus-visible:outline-none"
+        )}
       />
-      <button
-        onClick={() => {
-          if (input.trim() && !terminalBusy) {
-            runCommand(input.trim());
-            setInput("");
-            setHistoryIdx(-1);
-          }
-        }}
-        disabled={terminalBusy || !input.trim()}
-        style={{
-          fontSize: 11,
-          fontWeight: 500,
-          color: input.trim() && !terminalBusy ? "var(--ac)" : "var(--t4)",
-          padding: "4px 10px",
-          borderRadius: "var(--r)",
-          border: "1px solid var(--border)",
-          transition: "all .1s",
-        }}
-      >
-        Run
-      </button>
+      <div className="flex items-center gap-1.5">
+        <kbd className="text-[9px]">Ctrl+/</kbd>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-6 px-2.5 text-[11px] gap-1"
+          onClick={() => {
+            if (input.trim() && !terminalBusy) {
+              runCommand(input.trim());
+              setInput("");
+              setHistoryIdx(-1);
+            }
+          }}
+          disabled={terminalBusy || !input.trim()}
+        >
+          <Play className="w-3 h-3" />
+          Run
+        </Button>
+      </div>
     </div>
   );
 }

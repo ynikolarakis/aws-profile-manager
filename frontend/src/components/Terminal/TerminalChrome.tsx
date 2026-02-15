@@ -1,4 +1,7 @@
 import { useStore } from "@/store";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Trash2, Loader2 } from "lucide-react";
 
 export function TerminalChrome() {
   const active = useStore((s) => s.active);
@@ -6,49 +9,33 @@ export function TerminalChrome() {
   const clearTerminal = useStore((s) => s.clearTerminal);
 
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "6px 14px",
-        background: "var(--bg-2)",
-        borderBottom: "1px solid var(--border)",
-        flexShrink: 0,
-      }}
-    >
+    <div className="flex items-center gap-2 px-3.5 py-1.5 bg-[var(--bg-2)] border-b border-[var(--border)] shrink-0">
       <span
+        className="w-1.5 h-1.5 rounded-full shrink-0"
         style={{
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
           background: terminalBusy ? "var(--amber)" : "var(--green)",
           boxShadow: `0 0 6px ${terminalBusy ? "var(--amber)" : "var(--green)"}`,
         }}
       />
-      <span style={{ fontSize: 11, fontFamily: "var(--mono)", color: "var(--t2)", flex: 1 }}>
+      <Badge variant="secondary" className="text-[10px] font-mono gap-1">
         {active || "terminal"}
-      </span>
-      <button
+      </Badge>
+
+      {terminalBusy && (
+        <Loader2 className="w-3 h-3 text-[var(--t3)] animate-spin" />
+      )}
+
+      <div className="flex-1" />
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="text-[11px] text-[var(--t3)] h-6 px-2 gap-1"
         onClick={clearTerminal}
-        style={{
-          fontSize: 11,
-          color: "var(--t3)",
-          padding: "2px 6px",
-          borderRadius: "var(--r)",
-          transition: "all .1s",
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.color = "var(--t1)";
-          e.currentTarget.style.background = "var(--bg-3)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.color = "var(--t3)";
-          e.currentTarget.style.background = "none";
-        }}
       >
+        <Trash2 className="w-3 h-3" />
         Clear
-      </button>
+      </Button>
     </div>
   );
 }

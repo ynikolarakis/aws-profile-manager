@@ -1,12 +1,14 @@
 import { useEffect, useRef } from "react";
 import { useStore } from "@/store";
+import { TerminalSquare } from "lucide-react";
+import { cn } from "@/lib/utils";
 
-const lineStyles: Record<string, { color: string }> = {
-  prompt: { color: "var(--ac)" },
-  cmd: { color: "var(--cyan)" },
-  error: { color: "var(--red)" },
-  info: { color: "var(--amber)" },
-  output: { color: "var(--t2)" },
+const lineStyles: Record<string, string> = {
+  prompt: "text-[var(--ac)] font-medium",
+  cmd: "text-[var(--cyan)]",
+  error: "text-[var(--red)]",
+  info: "text-[var(--amber)]",
+  output: "text-[var(--t2)]",
 };
 
 export function TerminalOutput() {
@@ -22,23 +24,35 @@ export function TerminalOutput() {
   return (
     <div
       ref={scrollRef}
-      style={{
-        flex: 1,
-        overflowY: "auto",
-        padding: "8px 14px",
-        fontFamily: "var(--mono)",
-        fontSize: 12,
-        lineHeight: 1.6,
-        background: "var(--bg-0)",
-      }}
+      className="flex-1 overflow-y-auto p-3.5 font-mono text-[12px] leading-relaxed bg-[var(--bg-0)]"
     >
-      {lines.map((line) => (
-        <div key={line.id} style={lineStyles[line.type] || lineStyles.output}>
-          <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
-            {line.text}
-          </span>
+      {lines.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-full text-[var(--t4)] gap-3">
+          <TerminalSquare className="w-8 h-8 opacity-30" />
+          <div className="text-center">
+            <div className="text-[13px] font-medium mb-1">Run a command to get started</div>
+            <div className="text-[11px] text-[var(--t4)]">
+              Try <kbd>aws sts get-caller-identity</kbd> or <kbd>aws s3 ls</kbd>
+            </div>
+          </div>
         </div>
-      ))}
+      ) : (
+        lines.map((line) => {
+          const isPrompt = line.type === "prompt";
+          return (
+            <div
+              key={line.id}
+              className={cn(
+                isPrompt && "mt-2 pt-2 border-t border-dashed border-[var(--border)] first:mt-0 first:pt-0 first:border-t-0"
+              )}
+            >
+              <span className={cn("whitespace-pre-wrap break-all", lineStyles[line.type] || lineStyles.output)}>
+                {line.text}
+              </span>
+            </div>
+          );
+        })
+      )}
     </div>
   );
 }

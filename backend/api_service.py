@@ -15,7 +15,7 @@ import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 
 from .aws_config import AWSCfg
-from .constants import COMMON_SVCS, PROFILE_NAME_RE, REGIONS, SVC
+from .constants import COMMON_SVCS, PROFILE_NAME_RE, REGIONS, SVC, make_default_svc
 from .event_bus import events
 from .state_manager import StateManager
 
@@ -76,7 +76,7 @@ class ApiService:
             "collapsed": self.store.data.get("collapsed", {}),
             "regions": REGIONS,
             "services_map": {
-                k: {"icon": v["icon"], "short": v["short"], "color": v["color"], "cmds": v["cmds"]}
+                k: {"icon": v["icon"], "short": v["short"], "color": v["color"], "desc": v.get("desc", ""), "cmds": v["cmds"]}
                 for k, v in SVC.items()
             },
         }
@@ -275,9 +275,10 @@ class ApiService:
                     Metrics=["UnblendedCost"],
                     GroupBy=[{"Type": "DIMENSION", "Key": "SERVICE"}],
                 )
+                skip = {"Tax", "Refund", "Credit"}
                 for g in r.get("ResultsByTime", [{}])[0].get("Groups", []):
                     sn, cost = g["Keys"][0], float(g["Metrics"]["UnblendedCost"]["Amount"])
-                    if cost > 0.001 and sn in SVC:
+                    if cost > 0.001 and sn not in skip:
                         found.append({"name": sn, "cost": round(cost, 2)})
                 found.sort(key=lambda x: x["cost"], reverse=True)
                 if found:
@@ -300,7 +301,12 @@ class ApiService:
                 for sn in list(SVC.keys())[:8]:
                     found.append({"name": sn, "cost": None})
 
-            events.send("services", {"svcs": found, "src": src, "profile": profile})
+            svc_defs = {}
+            for item in found:
+                sn = item["name"]
+                svc_defs[sn] = SVC.get(sn) or make_default_svc(sn)
+
+            events.send("services", {"svcs": found, "src": src, "profile": profile, "svc_defs": svc_defs})
 
         threading.Thread(target=_go, daemon=True).start()
         return {"ok": True}
@@ -400,6 +406,118 @@ class ApiService:
             "profile_cat": self.store.data.get("profile_cat", {}),
         }
 
+    def _find_sso_token(self, sso_start_url: str) -> tuple[str, str] | None:
+        """Find a valid SSO access token from ~/.aws/sso/cache/ matching the given start URL."""
+        cache_dir = Path.home() / ".aws" / "sso" / "cache"
+        if not cache_dir.exists():
+            return None
+        now = datetime.now()
+        for f in cache_dir.glob("*.json"):
+            try:
+                data = json.loads(f.read_text())
+                if data.get("startUrl") != sso_start_url:
+                    continue
+                if "expiresAt" not in data or "accessToken" not in data:
+                    continue
+                exp = datetime.fromisoformat(data["expiresAt"].replace("Z", "").split("+")[0])
+                if exp > now:
+                    region = data.get("region", "us-east-1")
+                    return (data["accessToken"], region)
+            except Exception:
+                continue
+        return None
+
+    def discover_sso_accounts(self, sso_start_url: str | None = None) -> dict:
+        # Determine sso_start_url from param or first SSO profile
+        if not sso_start_url:
+            for _n, p in self.mgr.profiles.items():
+                if p.get("type") == "sso" and p.get("sso_start_url"):
+                    sso_start_url = p["sso_start_url"]
+                    break
+        if not sso_start_url:
+            return {"error": "No SSO profiles found. Create an SSO profile first."}
+
+        url = sso_start_url
+
+        def _go():
+            try:
+                token_result = self._find_sso_token(url)
+                if not token_result:
+                    events.send("sso_accounts", {"error": "SSO session expired. Run 'aws sso login' first.", "accounts": []})
+                    return
+                access_token, region = token_result
+                sso = boto3.client("sso", region_name=region)
+
+                # Paginate list_accounts
+                all_accounts = []
+                paginator = sso.get_paginator("list_accounts")
+                for page in paginator.paginate(accessToken=access_token):
+                    all_accounts.extend(page.get("accountList", []))
+
+                # For each account, get roles
+                results = []
+                for acct in all_accounts:
+                    account_id = acct["accountId"]
+                    account_name = acct.get("accountName", account_id)
+                    account_email = acct.get("emailAddress", "")
+                    role_paginator = sso.get_paginator("list_account_roles")
+                    for role_page in role_paginator.paginate(accessToken=access_token, accountId=account_id):
+                        for role in role_page.get("roleList", []):
+                            role_name = role["roleName"]
+                            suggested = f"{account_name}-{role_name}".lower().replace(" ", "-")
+                            # Check if profile already exists
+                            already_exists = any(
+                                p.get("sso_account_id") == account_id and p.get("sso_role_name") == role_name
+                                for p in self.mgr.profiles.values()
+                            )
+                            results.append({
+                                "account_id": account_id,
+                                "account_name": account_name,
+                                "account_email": account_email,
+                                "role_name": role_name,
+                                "suggested_profile_name": suggested,
+                                "already_exists": already_exists,
+                                "sso_start_url": url,
+                                "sso_region": region,
+                            })
+                events.send("sso_accounts", {"accounts": results, "error": None})
+            except ClientError as e:
+                code = e.response.get("Error", {}).get("Code", "")
+                if code == "UnauthorizedException":
+                    events.send("sso_accounts", {"error": "SSO session expired. Run 'aws sso login' first.", "accounts": []})
+                else:
+                    events.send("sso_accounts", {"error": str(e)[:100], "accounts": []})
+            except Exception as e:
+                events.send("sso_accounts", {"error": str(e)[:100], "accounts": []})
+
+        threading.Thread(target=_go, daemon=True).start()
+        return {"ok": True}
+
+    def import_sso_accounts(self, accounts: list[dict]) -> dict:
+        imported = 0
+        for acct in accounts:
+            name = acct.get("name", "").strip()
+            err = self.validate_name(name)
+            if err:
+                continue
+            # Skip if profile already exists with same name
+            if name in self.mgr.profiles:
+                continue
+            self.mgr.profiles[name] = {
+                "name": name,
+                "type": "sso",
+                "sso_start_url": acct.get("sso_start_url", ""),
+                "sso_region": acct.get("sso_region", ""),
+                "sso_account_id": acct.get("sso_account_id", ""),
+                "sso_role_name": acct.get("sso_role_name", ""),
+                "region": acct.get("region", "eu-central-1"),
+                "output": "json",
+            }
+            imported += 1
+        if imported > 0:
+            self.mgr.save()
+        return {"ok": True, "count": imported}
+
     def import_json(self, data: dict) -> dict:
         profiles = data.get("profiles", {})
         for n, p in profiles.items():
@@ -410,5 +528,6 @@ class ApiService:
                 self.store.data["categories"][cid] = cdata
         for pn, cid in data.get("profile_cat", {}).items():
             self.store.data.setdefault("profile_cat", {})[pn] = cid
+        self.mgr.save()
         self.store.save()
         return {"ok": True, "count": len(profiles)}

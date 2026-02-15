@@ -78,6 +78,13 @@ class ToggleCollapsedResponse(BaseModel):
     ok: bool = True
     collapsed: bool
 
+class DiscoverSsoRequest(BaseModel):
+    sso_start_url: str | None = None
+
+class ImportSsoAccountsRequest(BaseModel):
+    accounts: list[dict]
+
+
 class ImportResponse(BaseModel):
     ok: bool = True
     count: int

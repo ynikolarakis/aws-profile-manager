@@ -1,6 +1,15 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useStore } from "@/store";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 
 interface Props {
   data: Record<string, unknown>;
@@ -20,115 +29,38 @@ export function FavoriteEditor({ data, onClose }: Props) {
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,.5)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 100,
-      }}
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.15 }}
-        style={{
-          background: "var(--bg-1)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
-          padding: 24,
-          width: 400,
-        }}
-      >
-        <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 16 }}>Add Favorite</h2>
+    <Dialog open onOpenChange={(open) => !open && onClose()}>
+      <DialogContent className="max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>Add Favorite</DialogTitle>
+          <DialogDescription>Save a command for quick access</DialogDescription>
+        </DialogHeader>
 
-        <div style={{ marginBottom: 12 }}>
-          <label style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginBottom: 4, display: "block" }}>
-            Label
-          </label>
-          <input
-            type="text"
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-            placeholder="My Command"
-            style={{
-              width: "100%",
-              height: 32,
-              padding: "0 10px",
-              background: "var(--bg-0)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              color: "var(--t1)",
-              fontSize: 12,
-              outline: "none",
-            }}
-          />
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[11px] font-medium text-[var(--t3)] mb-1">Label</label>
+            <Input
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              placeholder="My Command"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-medium text-[var(--t3)] mb-1">Command</label>
+            <Input
+              value={cmd}
+              onChange={(e) => setCmd(e.target.value)}
+              placeholder="aws ..."
+              className="font-mono"
+            />
+          </div>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <label style={{ fontSize: 11, fontWeight: 500, color: "var(--t3)", marginBottom: 4, display: "block" }}>
-            Command
-          </label>
-          <input
-            type="text"
-            value={cmd}
-            onChange={(e) => setCmd(e.target.value)}
-            placeholder="aws ..."
-            style={{
-              width: "100%",
-              height: 32,
-              padding: "0 10px",
-              background: "var(--bg-0)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r)",
-              color: "var(--t1)",
-              fontFamily: "var(--mono)",
-              fontSize: 12,
-              outline: "none",
-            }}
-          />
-        </div>
-
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-          <button
-            onClick={onClose}
-            style={{
-              height: 32,
-              padding: "0 16px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "var(--t2)",
-              borderRadius: "var(--r)",
-              border: "1px solid var(--border)",
-            }}
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={!label.trim() || !cmd.trim()}
-            style={{
-              height: 32,
-              padding: "0 16px",
-              fontSize: 12,
-              fontWeight: 500,
-              color: "#fff",
-              background: "var(--ac)",
-              borderRadius: "var(--r)",
-              opacity: label.trim() && cmd.trim() ? 1 : 0.5,
-            }}
-          >
-            Save
-          </button>
-        </div>
-      </motion.div>
-    </motion.div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={!label.trim() || !cmd.trim()}>Save</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

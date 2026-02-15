@@ -4,14 +4,7 @@ import { TerminalInput } from "./TerminalInput";
 
 export function Terminal() {
   return (
-    <div
-      style={{
-        flex: 1,
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-      }}
-    >
+    <div className="flex-1 flex flex-col overflow-hidden">
       <TerminalChrome />
       <TerminalOutput />
       <TerminalInput />

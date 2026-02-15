@@ -4,14 +4,7 @@ import { Terminal } from "./Terminal/Terminal";
 
 export function MainContent() {
   return (
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        overflow: "hidden",
-        background: "var(--bg-0)",
-      }}
-    >
+    <div className="flex flex-col overflow-hidden bg-[var(--bg-0)]">
       <IdentityBar />
       <FavoritesBar />
       <Terminal />
