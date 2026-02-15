@@ -115,6 +115,15 @@ export function Header() {
 
         <Tooltip>
           <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={handleExport}>
+              <Download className="w-3.5 h-3.5 text-[var(--t3)]" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Export profiles</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
             <Button variant="ghost" size="icon" onClick={() => setDialog({ type: "sso-discover", data: {} })}>
               <Radar className="w-3.5 h-3.5 text-[var(--t3)]" />
             </Button>
@@ -124,11 +133,11 @@ export function Header() {
 
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={handleExport}>
-              <Download className="w-3.5 h-3.5 text-[var(--t3)]" />
+            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: "settings", data: {} })}>
+              <Settings className="w-3.5 h-3.5 text-[var(--t3)]" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent>Export profiles</TooltipContent>
+          <TooltipContent>Settings</TooltipContent>
         </Tooltip>
 
         <Tooltip>
@@ -142,15 +151,6 @@ export function Header() {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{theme === "dark" ? "Light mode" : "Dark mode"}</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: "settings", data: {} })}>
-              <Settings className="w-3.5 h-3.5 text-[var(--t3)]" />
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>Settings</TooltipContent>
         </Tooltip>
 
         <Separator orientation="vertical" className="h-4 mx-0.5" />

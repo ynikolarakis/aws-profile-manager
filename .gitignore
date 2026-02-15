@@ -39,9 +39,22 @@ Thumbs.db
 
 # AWS (never commit credentials)
 .aws/
+*accessKeys*.csv
+*.csv
 
-# Claude Code backups
+# Claude Code
 .claude/backups/
+.claude/settings.local.json
+
+# Site build scripts
+site/take-*.js
+
+# Backend static (built output)
+backend/static/
+
+# Misc
+OpenAIAPI.txt
+aws-profile-manager/
 
 # PyInstaller
 *.spec

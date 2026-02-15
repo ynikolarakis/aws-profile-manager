@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Documentation — AWS Profile Manager</title>
+  <meta name="description" content="Complete documentation and user manual for AWS Profile Manager. Installation, features, configuration, and keyboard shortcuts.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%233b82f6'/><path d='M8 18.5C8 15.46 10.46 13 13.5 13H14C14 10.79 15.79 9 18 9C19.86 9 21.43 10.28 21.87 12.01C23.61 12.1 25 13.55 25 15.33C25 17.18 23.51 18.5 21.67 18.5H13.5C11.57 18.5 10 18.5 8 18.5Z' fill='white' fill-opacity='.9'/><path d='M12 21L14.5 23.5L12 26' stroke='white' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/><line x1='17' y1='26' x2='22' y2='26' stroke='white' stroke-width='1.8' stroke-linecap='round'/></svg>">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #09090b;
+      --bg-subtle: #18181b;
+      --bg-card: rgba(255,255,255,0.04);
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.15);
+      --text: #fafafa;
+      --text-muted: rgba(255,255,255,0.5);
+      --text-secondary: rgba(255,255,255,0.7);
+      --blue: #3b82f6;
+      --blue-glow: rgba(59,130,246,0.15);
+      --green: #22c55e;
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --radius: 12px;
+      --radius-sm: 8px;
+      --sidebar-w: 260px;
+    }
+
+    html { scroll-behavior: smooth; -webkit-font-smoothing: antialiased; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 64px 64px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    a { color: var(--blue); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; display: block; }
+
+    /* ========== TOP NAV ========== */
+    .topnav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      height: 56px;
+      background: rgba(9,9,11,0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+    }
+    .topnav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      color: var(--text);
+      text-decoration: none;
+    }
+    .topnav-logo:hover { text-decoration: none; }
+    .topnav-sep {
+      width: 1px;
+      height: 20px;
+      background: var(--border);
+      margin: 0 16px;
+    }
+    .topnav-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .topnav-right {
+      margin-left: auto;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .topnav-right a {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-decoration: none;
+    }
+    .topnav-right a:hover { color: var(--text); }
+
+    /* ========== SIDEBAR ========== */
+    .sidebar {
+      position: fixed;
+      top: 56px;
+      left: 0;
+      bottom: 0;
+      width: var(--sidebar-w);
+      background: var(--bg);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 24px 0;
+      z-index: 50;
+    }
+    .sidebar::-webkit-scrollbar { width: 4px; }
+    .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    .sidebar-group { margin-bottom: 24px; }
+    .sidebar-group-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 0 24px;
+      margin-bottom: 8px;
+    }
+    .sidebar-link {
+      display: block;
+      padding: 6px 24px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.15s, background 0.15s;
+      border-left: 2px solid transparent;
+    }
+    .sidebar-link:hover {
+      color: var(--text);
+      background: rgba(255,255,255,0.03);
+      text-decoration: none;
+    }
+    .sidebar-link.active {
+      color: var(--blue);
+      border-left-color: var(--blue);
+      background: rgba(59,130,246,0.05);
+    }
+
+    /* Mobile sidebar toggle */
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 200;
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: white;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      align-items: center;
+      justify-content: center;
+    }
+    .sidebar-toggle svg { width: 20px; height: 20px; }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-toggle { display: flex; }
+      .main { margin-left: 0 !important; }
+    }
+
+    /* ========== MAIN CONTENT ========== */
+    .main {
+      margin-left: var(--sidebar-w);
+      margin-top: 56px;
+      padding: 48px 48px 120px;
+      max-width: 900px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ========== TYPOGRAPHY ========== */
+    .doc-h1 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+    .doc-subtitle {
+      font-size: 16px;
+      color: var(--text-muted);
+      margin-bottom: 48px;
+      line-height: 1.6;
+    }
+    .doc-h2 {
+      font-size: 22px;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+      margin: 56px 0 16px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+      scroll-margin-top: 80px;
+    }
+    .doc-h2:first-of-type { margin-top: 0; border-top: none; padding-top: 0; }
+    .doc-h3 {
+      font-size: 17px;
+      font-weight: 600;
+      margin: 32px 0 12px;
+      scroll-margin-top: 80px;
+    }
+    .doc-p {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 16px;
+      line-height: 1.7;
+    }
+
+    /* ========== SCREENSHOT ========== */
+    .doc-screenshot {
+      margin: 24px 0 32px;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    .doc-screenshot img {
+      width: 100%;
+      display: block;
+    }
+    .doc-screenshot-caption {
+      padding: 10px 16px;
+      background: var(--bg-subtle);
+      border-top: 1px solid var(--border);
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* ========== CODE BLOCKS ========== */
+    code {
+      font-family: 'SF Mono', 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 13px;
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--text);
+    }
+    pre {
+      background: var(--bg-subtle);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 20px;
+      overflow-x: auto;
+      margin: 16px 0 24px;
+      line-height: 1.6;
+    }
+    pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    /* ========== TABLES ========== */
+    .doc-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 14px;
+    }
+    .doc-table th {
+      text-align: left;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-muted);
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .doc-table td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-secondary);
+    }
+    .doc-table tr:last-child td { border-bottom: none; }
+    .doc-table code { font-size: 12px; }
+
+    /* ========== LISTS ========== */
+    .doc-list {
+      margin: 12px 0 24px;
+      padding-left: 24px;
+    }
+    .doc-list li {
+      font-size: 15px;
+      color: var(--text-secondary);
+      margin-bottom: 8px;
+      line-height: 1.6;
+    }
+
+    /* ========== CALLOUTS ========== */
+    .callout {
+      padding: 16px 20px;
+      border-radius: var(--radius-sm);
+      margin: 16px 0 24px;
+      font-size: 14px;
+      line-height: 1.6;
+      display: flex;
+      gap: 12px;
+    }
+    .callout-icon { flex-shrink: 0; margin-top: 2px; }
+    .callout-info {
+      background: rgba(59,130,246,0.08);
+      border: 1px solid rgba(59,130,246,0.2);
+      color: var(--text-secondary);
+    }
+    .callout-warn {
+      background: rgba(245,158,11,0.08);
+      border: 1px solid rgba(245,158,11,0.2);
+      color: var(--text-secondary);
+    }
+    .callout-danger {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: var(--text-secondary);
+    }
+
+    /* ========== STEP INDICATORS ========== */
+    .step {
+      display: flex;
+      gap: 16px;
+      margin: 20px 0;
+    }
+    .step-num {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(59,130,246,0.15);
+      color: var(--blue);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 600;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .step-content {
+      flex: 1;
+    }
+    .step-content h4 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .step-content p {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    /* ========== BADGE ========== */
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .badge-sso { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .badge-cred { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-role { background: rgba(168,85,247,0.15); color: #a855f7; }
+
+    /* ========== FEATURE CARDS ========== */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin: 16px 0 24px;
+    }
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+    }
+    .feature-card h4 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    .feature-card p {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+    @media (max-width: 640px) {
+      .feature-grid { grid-template-columns: 1fr; }
+      .main { padding: 24px 20px 80px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- TOP NAV -->
+  <header class="topnav">
+    <a href="index.html" class="topnav-logo">
+      <svg width="24" height="24" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#3b82f6"/><path d="M8 18.5C8 15.46 10.46 13 13.5 13H14C14 10.79 15.79 9 18 9C19.86 9 21.43 10.28 21.87 12.01C23.61 12.1 25 13.55 25 15.33C25 17.18 23.51 18.5 21.67 18.5H13.5C11.57 18.5 10 18.5 8 18.5Z" fill="white" fill-opacity=".9"/><path d="M12 21L14.5 23.5L12 26" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="17" y1="26" x2="22" y2="26" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+      AWS Profile Manager
+    </a>
+    <div class="topnav-sep"></div>
+    <span class="topnav-label">Documentation</span>
+    <div class="topnav-right">
+      <a href="index.html">Home</a>
+      <a href="index.html#pricing">Pricing</a>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Getting Started</div>
+      <a href="#installation" class="sidebar-link">Installation</a>
+      <a href="#requirements" class="sidebar-link">Requirements</a>
+      <a href="#quickstart" class="sidebar-link">Quick Start</a>
+      <a href="#overview" class="sidebar-link">Interface Overview</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Profiles</div>
+      <a href="#profile-types" class="sidebar-link">Profile Types</a>
+      <a href="#creating-profiles" class="sidebar-link">Creating Profiles</a>
+      <a href="#managing-profiles" class="sidebar-link">Managing Profiles</a>
+      <a href="#categories" class="sidebar-link">Categories</a>
+      <a href="#search" class="sidebar-link">Search &amp; Filter</a>
+      <a href="#import-export" class="sidebar-link">Import &amp; Export</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Terminal</div>
+      <a href="#terminal" class="sidebar-link">Running Commands</a>
+      <a href="#bulk-run" class="sidebar-link">Bulk Run</a>
+      <a href="#terminal-encoding" class="sidebar-link">Encoding Settings</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">AI Integration</div>
+      <a href="#ai-overview" class="sidebar-link">Overview</a>
+      <a href="#ai-providers" class="sidebar-link">Configuring Providers</a>
+      <a href="#ai-usage" class="sidebar-link">Generating Commands</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Features</div>
+      <a href="#command-palette" class="sidebar-link">Command Palette</a>
+      <a href="#sso-discovery" class="sidebar-link">SSO Discovery</a>
+      <a href="#cost-explorer" class="sidebar-link">Cost Explorer</a>
+      <a href="#favorites" class="sidebar-link">Favorites</a>
+      <a href="#themes" class="sidebar-link">Themes</a>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-title">Reference</div>
+      <a href="#keyboard-shortcuts" class="sidebar-link">Keyboard Shortcuts</a>
+      <a href="#config-files" class="sidebar-link">Configuration Files</a>
+      <a href="#troubleshooting" class="sidebar-link">Troubleshooting</a>
+    </div>
+  </aside>
+
+  <!-- MOBILE TOGGLE -->
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle navigation">
+    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+  </button>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <h1 class="doc-h1">AWS Profile Manager Documentation</h1>
+    <p class="doc-subtitle">Complete guide to installing, configuring, and using AWS Profile Manager — your all-in-one dashboard for managing AWS CLI profiles, terminal, AI commands, and cost analysis.</p>
+
+    <!-- ==================== INSTALLATION ==================== -->
+    <h2 class="doc-h2" id="installation">Installation</h2>
+
+    <h3 class="doc-h3" id="requirements">System Requirements</h3>
+    <table class="doc-table">
+      <thead><tr><th>Requirement</th><th>Version</th></tr></thead>
+      <tbody>
+        <tr><td>Python</td><td><code>3.10+</code></td></tr>
+        <tr><td>Node.js</td><td><code>18+</code></td></tr>
+        <tr><td>AWS CLI</td><td><code>v2</code> (recommended)</td></tr>
+        <tr><td>OS</td><td>Windows 10/11, macOS, Linux</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="doc-h3">Install from Source</h3>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Clone the repository</h4>
+        <pre><code>git clone https://github.com/ynikolarakis/aws-profile-manager.git
+cd aws-profile-manager</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Run setup</h4>
+        <p>This creates a Python virtual environment and installs all dependencies (backend + frontend).</p>
+        <pre><code>make setup</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Build for production</h4>
+        <pre><code>make build</code></pre>
+      </div>
+    </div>
+
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <h4>Start the application</h4>
+        <p>Opens the app at <code>http://localhost:8099</code></p>
+        <pre><code>make start</code></pre>
+      </div>
+    </div>
+
+    <div class="callout callout-info">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#3b82f6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+      <span>For development with hot reload, use <code>make dev</code> instead. This runs the FastAPI backend and Vite dev server concurrently.</span>
+    </div>
+
+    <h3 class="doc-h3">Available Commands</h3>
+    <table class="doc-table">
+      <thead><tr><th>Command</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>make dev</code></td><td>Start backend + frontend in development mode (hot reload)</td></tr>
+        <tr><td><code>make start</code></td><td>Production server — backend serves built frontend on port 8099</td></tr>
+        <tr><td><code>make build</code></td><td>Install dependencies and build both backend + frontend</td></tr>
+        <tr><td><code>make setup</code></td><td>Create virtual environment + install all dependencies</td></tr>
+        <tr><td><code>make test</code></td><td>Run all tests (pytest + vitest)</td></tr>
+        <tr><td><code>make lint</code></td><td>Lint backend (ruff) and frontend (eslint)</td></tr>
+        <tr><td><code>make clean</code></td><td>Remove cache, dist, node_modules, venv</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ==================== QUICK START ==================== -->
+    <h2 class="doc-h2" id="quickstart">Quick Start</h2>
+
+    <p class="doc-p">After installation, open <code>http://localhost:8099</code> in your browser. The app automatically reads your existing AWS profiles from <code>~/.aws/config</code> and <code>~/.aws/credentials</code>.</p>
+
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <h4>Your profiles appear in the sidebar</h4>
+        <p>All existing AWS CLI profiles are loaded automatically. Click any profile to activate it.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <h4>Run your first command</h4>
+        <p>Type <code>aws sts get-caller-identity</code> in the terminal at the bottom and press Enter.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <h4>Organize into categories</h4>
+        <p>Click "Category" to create groups (Production, Staging, etc.) and drag profiles into them.</p>
+      </div>
+    </div>
+
+    <!-- ==================== INTERFACE OVERVIEW ==================== -->
+    <h2 class="doc-h2" id="overview">Interface Overview</h2>
+
+    <p class="doc-p">The interface follows a terminal-first design: the command area takes center stage, while profile management lives in the sidebar.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/overview.png" alt="Full application overview" loading="lazy">
+      <div class="doc-screenshot-caption">Main interface — sidebar with profiles, terminal area, and header bar</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>Header Bar</h4>
+        <p>Active profile name, search (Ctrl+K), favorites, theme toggle, settings, and New Profile button.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Sidebar</h4>
+        <p>Profile search, category groups, profile list with type/region badges, Category and Bulk Run buttons.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Terminal Area</h4>
+        <p>Identity bar showing account ID and ARN. Command output area. Terminal input with AI toggle.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Status Indicators</h4>
+        <p>Green dot = active/authenticated. Orange dot = SSO session expired. Cost badges show 30-day spend.</p>
+      </div>
+    </div>
+
+    <!-- ==================== PROFILE TYPES ==================== -->
+    <h2 class="doc-h2" id="profile-types">Profile Types</h2>
+
+    <p class="doc-p">AWS Profile Manager supports all three AWS CLI profile types:</p>
+
+    <h3 class="doc-h3">SSO Profiles <span class="badge badge-sso">SSO</span></h3>
+    <p class="doc-p">Use AWS IAM Identity Center (formerly AWS SSO) to authenticate. Session tokens are cached in <code>~/.aws/sso/cache/</code>. The app automatically checks token validity and shows a status indicator.</p>
+    <table class="doc-table">
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>sso_start_url</code></td><td>Your SSO portal URL (e.g., <code>https://myorg.awsapps.com/start</code>)</td></tr>
+        <tr><td><code>sso_region</code></td><td>Region of your SSO instance</td></tr>
+        <tr><td><code>sso_account_id</code></td><td>12-digit AWS account ID</td></tr>
+        <tr><td><code>sso_role_name</code></td><td>IAM role to assume via SSO</td></tr>
+        <tr><td><code>region</code></td><td>Default region for CLI commands</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="doc-h3">Credential Profiles <span class="badge badge-cred">CREDENTIALS</span></h3>
+    <p class="doc-p">Long-term access keys stored in <code>~/.aws/credentials</code>. Secret keys are masked in the UI after saving.</p>
+    <table class="doc-table">
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>aws_access_key_id</code></td><td>Your access key ID</td></tr>
+        <tr><td><code>aws_secret_access_key</code></td><td>Your secret access key (masked after save)</td></tr>
+        <tr><td><code>aws_session_token</code></td><td>Optional session token for temporary credentials</td></tr>
+        <tr><td><code>region</code></td><td>Default region for CLI commands</td></tr>
+      </tbody>
+    </table>
+
+    <h3 class="doc-h3">Role Profiles <span class="badge badge-role">ROLE</span></h3>
+    <p class="doc-p">Assume a role from another profile. No credentials stored directly — uses the source profile to get temporary credentials.</p>
+    <table class="doc-table">
+      <thead><tr><th>Field</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td><code>role_arn</code></td><td>ARN of the role to assume</td></tr>
+        <tr><td><code>source_profile</code></td><td>Name of the profile to assume from</td></tr>
+        <tr><td><code>external_id</code></td><td>Optional external ID for cross-account roles</td></tr>
+        <tr><td><code>region</code></td><td>Default region for CLI commands</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ==================== CREATING PROFILES ==================== -->
+    <h2 class="doc-h2" id="creating-profiles">Creating Profiles</h2>
+
+    <p class="doc-p">Click <strong>+ New Profile</strong> in the header or press <code>Ctrl+N</code> to open the creation dialog.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/new-profile.png" alt="New Profile dialog" loading="lazy">
+      <div class="doc-screenshot-caption">New Profile dialog — select type (SSO, Credentials, Role), fill in fields, assign category</div>
+    </div>
+
+    <ol class="doc-list">
+      <li>Enter a <strong>profile name</strong> (letters, numbers, hyphens, underscores, dots only)</li>
+      <li>Optionally assign to a <strong>category</strong></li>
+      <li>Select the <strong>profile type</strong> (SSO, Credentials, or Role)</li>
+      <li>Fill in the required fields for the selected type</li>
+      <li>Choose your <strong>default region</strong> and <strong>output format</strong></li>
+      <li>Click <strong>Save</strong></li>
+    </ol>
+
+    <div class="callout callout-info">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#3b82f6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+      <span>Profiles are <strong>auto-saved</strong> directly to your AWS CLI config files. A timestamped backup is created before every write.</span>
+    </div>
+
+    <!-- ==================== MANAGING PROFILES ==================== -->
+    <h2 class="doc-h2" id="managing-profiles">Managing Profiles</h2>
+
+    <p class="doc-p">Click any profile in the sidebar to <strong>activate</strong> it. The app runs an identity check (STS GetCallerIdentity) and displays the account ID and ARN in the terminal header.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/profile-detail.png" alt="Profile activated with identity" loading="lazy">
+      <div class="doc-screenshot-caption">Active profile showing identity verification in the terminal header</div>
+    </div>
+
+    <ul class="doc-list">
+      <li><strong>Activate</strong> — Click profile name, use command palette (Ctrl+K), or search</li>
+      <li><strong>Edit</strong> — Click the three-dot menu on a profile item</li>
+      <li><strong>Delete</strong> — Available in the context menu or profile editor</li>
+      <li><strong>Move to category</strong> — Drag or use the context menu to reassign</li>
+    </ul>
+
+    <!-- ==================== CATEGORIES ==================== -->
+    <h2 class="doc-h2" id="categories">Categories</h2>
+
+    <p class="doc-p">Organize profiles into collapsible groups with custom colors. Click <strong>Category</strong> in the sidebar to create and manage categories.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/category-manager.png" alt="Category creation dialog" loading="lazy">
+      <div class="doc-screenshot-caption">New Category dialog — name and color picker with 12+ color options</div>
+    </div>
+
+    <ul class="doc-list">
+      <li><strong>Create</strong> — Click "Category" button or use command palette</li>
+      <li><strong>Edit</strong> — Click the gear icon on any category header to rename or change color</li>
+      <li><strong>Delete</strong> — Removes the category but keeps all profiles (moved to uncategorized)</li>
+      <li><strong>Collapse/Expand</strong> — Click the category header. State is persisted across sessions</li>
+    </ul>
+
+    <!-- ==================== SEARCH ==================== -->
+    <h2 class="doc-h2" id="search">Search &amp; Filter</h2>
+
+    <p class="doc-p">The search field at the top of the sidebar filters profiles in real-time as you type. It matches against profile name, type, region, and account ID.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/search.png" alt="Profile search filtering" loading="lazy">
+      <div class="doc-screenshot-caption">Searching for "Prod" — instantly filters to matching profiles across all categories</div>
+    </div>
+
+    <!-- ==================== IMPORT & EXPORT ==================== -->
+    <h2 class="doc-h2" id="import-export">Import &amp; Export</h2>
+
+    <p class="doc-p">Share profile configurations across machines or team members using JSON export/import.</p>
+
+    <ul class="doc-list">
+      <li><strong>Export</strong> — Command palette (Ctrl+K) &rarr; "Export Profiles". Downloads a timestamped JSON file with all profiles and categories.</li>
+      <li><strong>Import</strong> — Command palette &rarr; "Import Profiles". Select a JSON file to restore profiles and category mappings.</li>
+    </ul>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></span>
+      <span>Import merges with existing profiles. Duplicate profile names will be skipped.</span>
+    </div>
+
+    <!-- ==================== TERMINAL ==================== -->
+    <h2 class="doc-h2" id="terminal">Running Commands</h2>
+
+    <p class="doc-p">The terminal is the core of the application. Type any AWS CLI command and press Enter. The active profile's credentials are injected automatically.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/terminal-run.png" alt="Terminal running aws s3 ls" loading="lazy">
+      <div class="doc-screenshot-caption">Running <code>aws s3 ls</code> — output streams in real-time with the active profile's credentials</div>
+    </div>
+
+    <ul class="doc-list">
+      <li><strong>Profile context</strong> — credentials and region are set automatically based on the active profile</li>
+      <li><strong>History</strong> — use Arrow Up/Down to navigate previous commands</li>
+      <li><strong>Streaming output</strong> — results appear line-by-line as they're received</li>
+      <li><strong>Focus shortcut</strong> — press <code>Ctrl+/</code> to jump to the terminal input from anywhere</li>
+    </ul>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/terminal-identity.png" alt="STS identity check" loading="lazy">
+      <div class="doc-screenshot-caption">Running <code>aws sts get-caller-identity</code> — verifies which account and role you're operating as</div>
+    </div>
+
+    <!-- ==================== BULK RUN ==================== -->
+    <h2 class="doc-h2" id="bulk-run">Bulk Run</h2>
+
+    <p class="doc-p">Execute the same command across multiple profiles simultaneously. Click <strong>Bulk Run</strong> in the sidebar or use the command palette.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/bulk-run.png" alt="Bulk Run dialog" loading="lazy">
+      <div class="doc-screenshot-caption">Bulk Run — select profiles, enter a command, use quick templates (Identity, S3 Buckets)</div>
+    </div>
+
+    <ul class="doc-list">
+      <li>Select individual profiles or click <strong>All</strong> to select everything</li>
+      <li>Use <strong>quick templates</strong>: "Identity" runs <code>aws sts get-caller-identity</code>, "S3 Buckets" runs <code>aws s3 ls</code></li>
+      <li>Results are separated by profile name with individual exit codes</li>
+      <li>Each command has a 30-second timeout</li>
+    </ul>
+
+    <!-- ==================== ENCODING ==================== -->
+    <h2 class="doc-h2" id="terminal-encoding">Terminal Encoding</h2>
+
+    <p class="doc-p">If terminal output shows garbled characters, adjust the encoding in Settings &rarr; General &rarr; Terminal Output Encoding.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/settings-general.png" alt="Terminal encoding settings" loading="lazy">
+      <div class="doc-screenshot-caption">Settings &rarr; General — change terminal output encoding (UTF-8, CP437, CP850, etc.)</div>
+    </div>
+
+    <p class="doc-p">Common encoding options:</p>
+    <table class="doc-table">
+      <thead><tr><th>Encoding</th><th>When to use</th></tr></thead>
+      <tbody>
+        <tr><td><code>UTF-8</code></td><td>macOS, Linux, or modern Windows terminal</td></tr>
+        <tr><td><code>CP437</code></td><td>Windows Command Prompt (US)</td></tr>
+        <tr><td><code>CP850</code></td><td>Windows Command Prompt (Western European)</td></tr>
+        <tr><td><code>CP1252</code></td><td>Windows (Western European legacy apps)</td></tr>
+        <tr><td><code>CP1253</code></td><td>Windows (Greek)</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ==================== AI OVERVIEW ==================== -->
+    <h2 class="doc-h2" id="ai-overview">AI Integration Overview</h2>
+
+    <p class="doc-p">AWS Profile Manager integrates with 6 LLM providers to generate AWS CLI commands from natural language descriptions. Toggle AI mode with the <strong>AI</strong> button in the terminal bar or press <code>Ctrl+I</code>.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/ai-mode-empty.png" alt="AI mode enabled" loading="lazy">
+      <div class="doc-screenshot-caption">AI mode enabled — the input changes to "Describe what you want to do..."</div>
+    </div>
+
+    <div class="feature-grid">
+      <div class="feature-card">
+        <h4>AWS Bedrock</h4>
+        <p>Uses your AWS profile credentials. No separate API key needed.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Anthropic</h4>
+        <p>Claude models. Requires an Anthropic API key.</p>
+      </div>
+      <div class="feature-card">
+        <h4>OpenAI</h4>
+        <p>GPT models. Requires an OpenAI API key.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Google AI</h4>
+        <p>Gemini models. Requires a Google AI API key.</p>
+      </div>
+      <div class="feature-card">
+        <h4>OpenRouter</h4>
+        <p>Access multiple models through a single API key.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Ollama</h4>
+        <p>Run models locally. No API key — just a base URL.</p>
+      </div>
+    </div>
+
+    <!-- ==================== AI PROVIDERS ==================== -->
+    <h2 class="doc-h2" id="ai-providers">Configuring AI Providers</h2>
+
+    <p class="doc-p">Open Settings (gear icon in header) &rarr; <strong>AI Providers</strong> tab. Select your default provider and configure API keys.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/settings-ai.png" alt="AI Provider settings" loading="lazy">
+      <div class="doc-screenshot-caption">Settings &rarr; AI Providers — configure API keys, select models, test connectivity</div>
+    </div>
+
+    <ol class="doc-list">
+      <li>Choose a <strong>Default Provider</strong> from the dropdown</li>
+      <li>Expand the provider you want to configure</li>
+      <li>Enter your <strong>API key</strong> (stored locally, never transmitted)</li>
+      <li>Select a <strong>model</strong> from the dropdown</li>
+      <li>Click <strong>Test</strong> to verify the connection</li>
+      <li>Click <strong>Save</strong></li>
+    </ol>
+
+    <div class="callout callout-info">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#3b82f6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+      <span>API keys are stored in <code>~/.aws/profile-manager.json</code> and are <strong>never</strong> transmitted to any server other than the LLM provider you selected. Keys are masked in the UI after saving.</span>
+    </div>
+
+    <!-- ==================== AI USAGE ==================== -->
+    <h2 class="doc-h2" id="ai-usage">Generating Commands with AI</h2>
+
+    <p class="doc-p">With AI mode active, describe what you want in plain English. The AI generates the exact AWS CLI command, context-aware of your active profile and region.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/ai-generate.png" alt="AI-generated command" loading="lazy">
+      <div class="doc-screenshot-caption">AI generates <code>aws ec2 describe-instances</code> from "show all EC2 instances running in eu-central-1" — with Run and Copy buttons</div>
+    </div>
+
+    <p class="doc-p">After the command is generated:</p>
+    <ul class="doc-list">
+      <li><strong>Run</strong> — execute the command immediately with your active profile</li>
+      <li><strong>Copy</strong> — copy the command to clipboard</li>
+      <li><strong>Dismiss</strong> — clear the suggestion (X button)</li>
+    </ul>
+
+    <p class="doc-p">Example prompts:</p>
+    <table class="doc-table">
+      <thead><tr><th>Natural language</th><th>Generated command</th></tr></thead>
+      <tbody>
+        <tr><td>"list all S3 buckets"</td><td><code>aws s3api list-buckets --output json</code></td></tr>
+        <tr><td>"show running EC2 instances"</td><td><code>aws ec2 describe-instances --filters Name=instance-state-name,Values=running</code></td></tr>
+        <tr><td>"list all VPCs in Frankfurt"</td><td><code>aws ec2 describe-vpcs --region eu-central-1 --output table</code></td></tr>
+        <tr><td>"who am I"</td><td><code>aws sts get-caller-identity</code></td></tr>
+      </tbody>
+    </table>
+
+    <!-- ==================== COMMAND PALETTE ==================== -->
+    <h2 class="doc-h2" id="command-palette">Command Palette</h2>
+
+    <p class="doc-p">Press <code>Ctrl+K</code> to open the command palette — a quick launcher for switching profiles, running actions, and accessing features.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/command-palette.png" alt="Command palette" loading="lazy">
+      <div class="doc-screenshot-caption">Command palette — search and switch profiles instantly, with type badges</div>
+    </div>
+
+    <p class="doc-p">Available actions in the command palette:</p>
+    <ul class="doc-list">
+      <li><strong>Switch Profile</strong> — type a profile name to filter and activate</li>
+      <li><strong>New Profile</strong> — create a new profile</li>
+      <li><strong>Reload Profiles</strong> — refresh from AWS config files</li>
+      <li><strong>Import / Export Profiles</strong> — bulk operations</li>
+      <li><strong>Discover SSO Accounts</strong> — scan for accounts</li>
+      <li><strong>Toggle AI Mode</strong></li>
+      <li><strong>Switch Theme</strong> (Light / Dark)</li>
+      <li><strong>Add Favorite Command</strong></li>
+      <li><strong>Open Settings</strong></li>
+    </ul>
+
+    <!-- ==================== SSO DISCOVERY ==================== -->
+    <h2 class="doc-h2" id="sso-discovery">SSO Account Discovery</h2>
+
+    <p class="doc-p">If you use AWS IAM Identity Center, the app can automatically discover all accounts and roles you have access to.</p>
+
+    <ol class="doc-list">
+      <li>Open the command palette (<code>Ctrl+K</code>) and select <strong>Discover SSO Accounts</strong></li>
+      <li>The app finds valid SSO tokens in <code>~/.aws/sso/cache/</code></li>
+      <li>It calls the SSO API to list all accounts and their available roles</li>
+      <li>Review the discovered accounts — duplicates are flagged</li>
+      <li>Select the accounts you want and click <strong>Import</strong></li>
+    </ol>
+
+    <div class="callout callout-info">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#3b82f6" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
+      <span>You must have a valid SSO session first. Run <code>aws sso login --profile &lt;any-sso-profile&gt;</code> in a terminal before discovery.</span>
+    </div>
+
+    <!-- ==================== COST EXPLORER ==================== -->
+    <h2 class="doc-h2" id="cost-explorer">Cost Explorer</h2>
+
+    <p class="doc-p">View per-profile AWS spending with a monthly service breakdown. Cost badges appear next to each profile in the sidebar showing the last 30 days of spending.</p>
+
+    <ul class="doc-list">
+      <li><strong>Cost badges</strong> — appear automatically in the sidebar if the profile has Cost Explorer access</li>
+      <li><strong>Detailed breakdown</strong> — click the cost badge or use the terminal header to open the Cost Explorer dialog</li>
+      <li><strong>Monthly navigation</strong> — browse previous months to track spending trends</li>
+      <li><strong>Service breakdown</strong> — see costs per AWS service with visual bars</li>
+    </ul>
+
+    <div class="callout callout-warn">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#f59e0b" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></span>
+      <span>Cost Explorer requires the <code>ce:GetCostAndUsage</code> IAM permission. The API always runs against <code>us-east-1</code> regardless of the profile's default region.</span>
+    </div>
+
+    <!-- ==================== FAVORITES ==================== -->
+    <h2 class="doc-h2" id="favorites">Favorites</h2>
+
+    <p class="doc-p">Save frequently used commands as favorites for one-click access from the header bar.</p>
+
+    <ul class="doc-list">
+      <li>Open command palette (<code>Ctrl+K</code>) &rarr; <strong>Add Favorite Command</strong></li>
+      <li>Enter a <strong>label</strong> (e.g., "Check STS") and the <strong>command</strong></li>
+      <li>Favorites appear as buttons in the header — click to execute immediately</li>
+      <li>Remove favorites via the command palette</li>
+    </ul>
+
+    <!-- ==================== THEMES ==================== -->
+    <h2 class="doc-h2" id="themes">Themes</h2>
+
+    <p class="doc-p">Toggle between dark and light mode using the theme button in the header or via the command palette.</p>
+
+    <div class="doc-screenshot">
+      <img src="screenshots/docs/light-mode.png" alt="Light mode" loading="lazy">
+      <div class="doc-screenshot-caption">Light mode — full application with white background</div>
+    </div>
+
+    <!-- ==================== KEYBOARD SHORTCUTS ==================== -->
+    <h2 class="doc-h2" id="keyboard-shortcuts">Keyboard Shortcuts</h2>
+
+    <table class="doc-table">
+      <thead><tr><th>Shortcut</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td><code>Ctrl+K</code></td><td>Open Command Palette</td></tr>
+        <tr><td><code>Ctrl+N</code></td><td>Create New Profile</td></tr>
+        <tr><td><code>Ctrl+I</code></td><td>Toggle AI Mode</td></tr>
+        <tr><td><code>Ctrl+/</code></td><td>Focus Terminal Input</td></tr>
+        <tr><td><code>Escape</code></td><td>Close active dialog or sheet</td></tr>
+        <tr><td><code>Arrow Up</code></td><td>Previous command in terminal history</td></tr>
+        <tr><td><code>Arrow Down</code></td><td>Next command in terminal history</td></tr>
+        <tr><td><code>Enter</code></td><td>Execute command in terminal</td></tr>
+      </tbody>
+    </table>
+
+    <!-- ==================== CONFIG FILES ==================== -->
+    <h2 class="doc-h2" id="config-files">Configuration Files</h2>
+
+    <p class="doc-p">AWS Profile Manager reads and writes the standard AWS CLI configuration files plus its own state file:</p>
+
+    <table class="doc-table">
+      <thead><tr><th>File</th><th>Purpose</th></tr></thead>
+      <tbody>
+        <tr><td><code>~/.aws/config</code></td><td>Profile definitions (INI format). Sections use <code>[profile name]</code> prefix (except <code>[default]</code>).</td></tr>
+        <tr><td><code>~/.aws/credentials</code></td><td>Access keys for credential-type profiles. Sections use <code>[name]</code> (no "profile" prefix).</td></tr>
+        <tr><td><code>~/.aws/profile-manager.json</code></td><td>App state: categories, favorites, theme, collapsed state, LLM config, terminal encoding.</td></tr>
+        <tr><td><code>~/.aws/sso/cache/</code></td><td>SSO session token cache (managed by AWS CLI).</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-danger">
+      <span class="callout-icon"><svg width="16" height="16" fill="none" stroke="#ef4444" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/></svg></span>
+      <span>A timestamped backup is created <strong>before every write</strong> to config/credentials files. Backups are stored alongside the original files (e.g., <code>~/.aws/config.backup.20260215_143022</code>).</span>
+    </div>
+
+    <h3 class="doc-h3">profile-manager.json Structure</h3>
+    <pre><code>{
+  "categories": {
+    "cat_id": { "name": "Production", "color": "#22c55e", "order": 0 }
+  },
+  "profile_cat": {
+    "Prod_Monitoring": "cat_id"
+  },
+  "favorites": [
+    { "label": "Check STS", "cmd": "aws sts get-caller-identity" }
+  ],
+  "theme": "dark",
+  "collapsed": { "cat_id": false },
+  "terminal_encoding": "cp437",
+  "llm_config": {
+    "default_provider": "openai",
+    "providers": {
+      "openai": { "api_key": "sk-...", "model": "gpt-4o" }
+    }
+  }
+}</code></pre>
+
+    <!-- ==================== TROUBLESHOOTING ==================== -->
+    <h2 class="doc-h2" id="troubleshooting">Troubleshooting</h2>
+
+    <h3 class="doc-h3">App won't start</h3>
+    <ul class="doc-list">
+      <li>Ensure Python 3.10+ is installed: <code>python --version</code></li>
+      <li>Ensure Node.js 18+ is installed: <code>node --version</code></li>
+      <li>Run <code>make setup</code> to reinstall dependencies</li>
+      <li>Check if port 8099 is already in use</li>
+    </ul>
+
+    <h3 class="doc-h3">SSO profiles show "expired"</h3>
+    <ul class="doc-list">
+      <li>Run <code>aws sso login --profile &lt;profile-name&gt;</code> in an external terminal</li>
+      <li>Check that your SSO start URL is correct in the profile config</li>
+      <li>SSO sessions typically expire after 8-12 hours</li>
+    </ul>
+
+    <h3 class="doc-h3">Terminal output shows garbled characters</h3>
+    <ul class="doc-list">
+      <li>Open Settings &rarr; General &rarr; Terminal Output Encoding</li>
+      <li>Try <code>UTF-8</code> first, then <code>CP437</code> (Windows US), or <code>CP1252</code> (Windows EU)</li>
+    </ul>
+
+    <h3 class="doc-h3">AI commands not generating</h3>
+    <ul class="doc-list">
+      <li>Verify your API key in Settings &rarr; AI Providers</li>
+      <li>Click <strong>Test</strong> next to the provider to check connectivity</li>
+      <li>For Ollama, ensure the local server is running and the base URL is correct</li>
+      <li>For Bedrock, ensure the active profile has <code>bedrock:InvokeModel</code> permissions</li>
+    </ul>
+
+    <h3 class="doc-h3">Cost badges not appearing</h3>
+    <ul class="doc-list">
+      <li>The profile needs <code>ce:GetCostAndUsage</code> IAM permission</li>
+      <li>New AWS accounts may not have Cost Explorer enabled — activate it in the AWS Console first</li>
+      <li>Cost data can take up to 24 hours to appear for new accounts</li>
+    </ul>
+
+    <h3 class="doc-h3">Commands fail with "aws not found"</h3>
+    <ul class="doc-list">
+      <li>Install the AWS CLI v2: <a href="https://docs.aws.amazon.com/cli/latest/userguide/getting-started-install.html" target="_blank">AWS CLI Installation Guide</a></li>
+      <li>Ensure <code>aws</code> is in your system PATH</li>
+      <li>Restart the app after installing AWS CLI</li>
+    </ul>
+
+    <!-- FOOTER -->
+    <div style="margin-top:80px;padding-top:32px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+      <div style="font-size:13px;color:var(--text-muted);display:flex;align-items:center;gap:8px;">
+        <svg width="18" height="18" viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#3b82f6"/><path d="M8 18.5C8 15.46 10.46 13 13.5 13H14C14 10.79 15.79 9 18 9C19.86 9 21.43 10.28 21.87 12.01C23.61 12.1 25 13.55 25 15.33C25 17.18 23.51 18.5 21.67 18.5H13.5C11.57 18.5 10 18.5 8 18.5Z" fill="white" fill-opacity=".9"/><path d="M12 21L14.5 23.5L12 26" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><line x1="17" y1="26" x2="22" y2="26" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg>
+        AWS Profile Manager &copy; 2025
+      </div>
+      <a href="index.html" style="font-size:13px;color:var(--text-muted);">Back to Home</a>
+    </div>
+
+  </main>
+
+  <script>
+    // Mobile sidebar toggle
+    const sidebar = document.getElementById('sidebar');
+    const toggle = document.getElementById('sidebarToggle');
+    toggle.addEventListener('click', () => sidebar.classList.toggle('open'));
+
+    // Active sidebar link on scroll
+    const sections = document.querySelectorAll('[id]');
+    const links = document.querySelectorAll('.sidebar-link');
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const id = entry.target.id;
+          links.forEach(link => {
+            link.classList.toggle('active', link.getAttribute('href') === '#' + id);
+          });
+        }
+      });
+    }, { rootMargin: '-80px 0px -60% 0px', threshold: 0 });
+
+    sections.forEach(section => {
+      if (section.id && document.querySelector(`.sidebar-link[href="#${section.id}"]`)) {
+        observer.observe(section);
+      }
+    });
+
+    // Close sidebar on link click (mobile)
+    links.forEach(link => {
+      link.addEventListener('click', () => sidebar.classList.remove('open'));
+    });
+  </script>
+</body>
+</html>
