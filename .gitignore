@@ -42,12 +42,12 @@ Thumbs.db
 *accessKeys*.csv
 *.csv
 
-# Claude Code
-.claude/backups/
-.claude/settings.local.json
-
-# Site build scripts
-site/take-*.js
+# Non-app directories
+site/
+tests/
+scripts/
+skills/
+.claude/
 
 # Backend static (built output)
 backend/static/
@@ -55,6 +55,9 @@ backend/static/
 # Misc
 OpenAIAPI.txt
 aws-profile-manager/
+screenshot.png
+CLAUDE.md
+PROGRESS.md
 
 # PyInstaller
 *.spec
