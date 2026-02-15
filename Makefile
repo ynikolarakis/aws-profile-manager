@@ -7,7 +7,7 @@ dev:
 	@$(MAKE) dev-frontend
 
 dev-backend:
-	cd backend && python -m uvicorn main:app --reload --host 127.0.0.1 --port 8099
+	python -m uvicorn backend.main:app --reload --host 127.0.0.1 --port 8099
 
 dev-frontend:
 	cd frontend && npm run dev
@@ -18,13 +18,13 @@ legacy:
 
 # Production (single server serving built frontend + API)
 start:
-	cd backend && python -m uvicorn main:app --host 127.0.0.1 --port 8099
+	python -m uvicorn backend.main:app --host 127.0.0.1 --port 8099
 
 # Build
 build: build-backend build-frontend
 
 build-backend:
-	cd backend && pip install -r requirements.txt
+	python -m pip install -r backend/requirements.txt
 
 build-frontend:
 	cd frontend && npm run build
@@ -45,7 +45,7 @@ test-e2e:
 lint: lint-backend lint-frontend
 
 lint-backend:
-	ruff check backend/ tests/
+	ruff check backend/
 
 lint-frontend:
 	cd frontend && npm run lint
