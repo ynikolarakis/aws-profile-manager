@@ -9,6 +9,7 @@ const lineStyles: Record<string, string> = {
   error: "text-[var(--red)]",
   info: "text-[var(--amber)]",
   output: "text-[var(--t2)]",
+  "ai-command": "text-[var(--ac)]",
 };
 
 export function TerminalOutput() {
@@ -39,11 +40,13 @@ export function TerminalOutput() {
       ) : (
         lines.map((line) => {
           const isPrompt = line.type === "prompt";
+          const isAiCmd = line.type === "ai-command";
           return (
             <div
               key={line.id}
               className={cn(
-                isPrompt && "mt-2 pt-2 border-t border-dashed border-[var(--border)] first:mt-0 first:pt-0 first:border-t-0"
+                isPrompt && "mt-2 pt-2 border-t border-dashed border-[var(--border)] first:mt-0 first:pt-0 first:border-t-0",
+                isAiCmd && "mt-1 px-2 py-1 rounded border border-[var(--ac)]/30 bg-[var(--ac)]/5"
               )}
             >
               <span className={cn("whitespace-pre-wrap break-all", lineStyles[line.type] || lineStyles.output)}>

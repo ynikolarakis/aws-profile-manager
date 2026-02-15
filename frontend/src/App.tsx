@@ -14,6 +14,7 @@ export default function App() {
   const setDialog = useStore((s) => s.setDialog);
   const setDetailProfile = useStore((s) => s.setDetailProfile);
   const setCommandPaletteOpen = useStore((s) => s.setCommandPaletteOpen);
+  const toggleAiMode = useStore((s) => s.toggleAiMode);
   useSSE();
 
   useEffect(() => {
@@ -44,10 +45,15 @@ export default function App() {
         e.preventDefault();
         setDialog({ type: "profile-editor", data: {} });
       }
+      // Ctrl+I toggle AI mode
+      if (e.key === "i" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        toggleAiMode();
+      }
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [setDialog, setDetailProfile, setCommandPaletteOpen]);
+  }, [setDialog, setDetailProfile, setCommandPaletteOpen, toggleAiMode]);
 
   return (
     <div

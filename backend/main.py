@@ -19,6 +19,7 @@ from .models import (
     ActivateRequest,
     AddCategoryRequest,
     AddFavoriteRequest,
+    AiGenerateRequest,
     BulkRunRequest,
     DeleteCategoryRequest,
     DeleteProfileRequest,
@@ -30,8 +31,10 @@ from .models import (
     ImportSsoAccountsRequest,
     RemoveFavoriteRequest,
     RunCommandRequest,
+    SaveLlmConfigRequest,
     SetProfileCategoryRequest,
     SetThemeRequest,
+    TestLlmProviderRequest,
     ToggleCollapsedRequest,
     ValidateNameRequest,
 )
@@ -286,6 +289,29 @@ async def import_sso_accounts(req: ImportSsoAccountsRequest):
 async def import_json(request: Request):
     body = await request.json()
     return api.import_json(body)
+
+
+# --- AI / LLM endpoints ---
+
+@app.post("/api/ai_generate")
+async def ai_generate(req: AiGenerateRequest):
+    return api.ai_generate(req.message)
+
+
+@app.get("/api/llm_config")
+async def get_llm_config():
+    return api.get_llm_config()
+
+
+@app.post("/api/save_llm_config")
+async def save_llm_config(req: SaveLlmConfigRequest):
+    return api.save_llm_config({"providers": req.providers, "default_provider": req.default_provider})
+
+
+@app.post("/api/test_llm_provider")
+async def test_llm_provider(req: TestLlmProviderRequest):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, api.test_llm_provider, req.provider_type, req.config)
 
 
 # --- SPA static files & catch-all ---

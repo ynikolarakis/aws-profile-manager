@@ -6,6 +6,9 @@ import type {
   CostData,
   DialogState,
   Identity,
+  LlmConfig,
+  LlmProviderConfig,
+  LlmProviderType,
   ServiceDef,
   SsoDiscoveredAccount,
   TerminalLine,
@@ -32,6 +35,14 @@ interface Store extends AppState {
   ssoDiscoverLoading: boolean;
   ssoDiscoverError: string | null;
 
+  // AI state
+  aiMode: boolean;
+  aiStreaming: boolean;
+  aiStreamedText: string;
+  aiGeneratedCommand: string | null;
+  llmConfig: LlmConfig | null;
+  aiTestResult: { ok: boolean; response?: string; error?: string } | null;
+
   // Actions
   init: () => Promise<void>;
   activate: (name: string) => Promise<void>;
@@ -54,6 +65,15 @@ interface Store extends AppState {
   discoverSsoAccounts: (ssoStartUrl?: string) => Promise<void>;
   importSsoAccounts: (accounts: Array<Record<string, string>>) => Promise<{ ok?: boolean; count?: number; error?: string }>;
   setEncoding: (encoding: string) => Promise<{ ok?: boolean; error?: string }>;
+
+  // AI actions
+  toggleAiMode: () => void;
+  aiGenerate: (message: string) => Promise<void>;
+  aiRunCommand: () => void;
+  aiDismiss: () => void;
+  loadLlmConfig: () => Promise<void>;
+  saveLlmConfig: (config: { providers: Record<string, LlmProviderConfig>; default_provider: string | null }) => Promise<{ ok?: boolean; error?: string }>;
+  testLlmProvider: (providerType: LlmProviderType, config: LlmProviderConfig) => Promise<void>;
 
   // UI actions
   setSearch: (s: string) => void;
@@ -81,6 +101,7 @@ export const useStore = create<Store>((set, _get) => ({
   services_map: {},
   terminal_encoding: "",
   default_encoding: "",
+  has_llm_configured: false,
   identity: null,
   costData: null,
   ssoStatus: {},
@@ -99,6 +120,12 @@ export const useStore = create<Store>((set, _get) => ({
   ssoDiscoveredAccounts: [],
   ssoDiscoverLoading: false,
   ssoDiscoverError: null,
+  aiMode: false,
+  aiStreaming: false,
+  aiStreamedText: "",
+  aiGeneratedCommand: null,
+  llmConfig: null,
+  aiTestResult: null,
 
   init: async () => {
     const state = await get<AppState>("/state");
@@ -115,6 +142,7 @@ export const useStore = create<Store>((set, _get) => ({
       services_map: state.services_map,
       terminal_encoding: state.terminal_encoding || "",
       default_encoding: state.default_encoding || "",
+      has_llm_configured: state.has_llm_configured || false,
     });
   },
 
@@ -260,6 +288,55 @@ export const useStore = create<Store>((set, _get) => ({
     return result;
   },
 
+  // AI actions
+  toggleAiMode: () => {
+    const store = _get();
+    if (!store.has_llm_configured && !store.aiMode) {
+      set({ dialog: { type: "settings", data: { tab: "ai" } } });
+      return;
+    }
+    set({ aiMode: !store.aiMode, aiGeneratedCommand: null, aiStreamedText: "", aiStreaming: false });
+  },
+
+  aiGenerate: async (message) => {
+    set({ aiStreaming: true, aiStreamedText: "", aiGeneratedCommand: null });
+    const store = _get();
+    store.addTerminalLine(`AI ❯ ${message}`, "prompt");
+    await post("/ai_generate", { message });
+  },
+
+  aiRunCommand: () => {
+    const store = _get();
+    if (store.aiGeneratedCommand) {
+      const cmd = store.aiGeneratedCommand;
+      set({ aiGeneratedCommand: null, aiStreamedText: "", aiMode: false });
+      store.runCommand(cmd);
+    }
+  },
+
+  aiDismiss: () => {
+    set({ aiGeneratedCommand: null, aiStreamedText: "", aiStreaming: false });
+  },
+
+  loadLlmConfig: async () => {
+    const config = await get<LlmConfig>("/llm_config");
+    set({ llmConfig: config });
+  },
+
+  saveLlmConfig: async (config) => {
+    const result = await post<{ ok?: boolean; error?: string }>("/save_llm_config", config);
+    if (result.ok) {
+      set({ has_llm_configured: !!(config.default_provider && Object.keys(config.providers).length > 0) });
+    }
+    return result;
+  },
+
+  testLlmProvider: async (providerType, config) => {
+    set({ aiTestResult: null });
+    const result = await post<{ ok: boolean; response?: string; error?: string }>("/test_llm_provider", { provider_type: providerType, config });
+    set({ aiTestResult: result });
+  },
+
   // UI actions
   setSearch: (s) => set({ search: s }),
   setDialog: (d) => set({ dialog: d }),
@@ -333,6 +410,42 @@ export const useStore = create<Store>((set, _get) => ({
           ssoDiscoverLoading: false,
           ssoDiscoverError: ssoData.error || null,
         });
+        break;
+      }
+      case "ai_chunk": {
+        const chunk = (data as { text: string }).text;
+        set((s) => ({ aiStreamedText: s.aiStreamedText + chunk }));
+        break;
+      }
+      case "ai_done": {
+        const command = (data as { command: string }).command;
+        set((s) => ({
+          aiStreaming: false,
+          aiGeneratedCommand: command,
+          aiStreamedText: command,
+          terminalLines: [
+            ...s.terminalLines,
+            { id: s.lineCounter, text: command, type: "ai-command" as const },
+          ],
+          lineCounter: s.lineCounter + 1,
+        }));
+        break;
+      }
+      case "ai_error": {
+        const err = (data as { error: string }).error;
+        set((s) => ({
+          aiStreaming: false,
+          aiGeneratedCommand: null,
+          terminalLines: [
+            ...s.terminalLines,
+            { id: s.lineCounter, text: `AI Error: ${err}`, type: "error" as const },
+          ],
+          lineCounter: s.lineCounter + 1,
+        }));
+        break;
+      }
+      case "ai_test_result": {
+        set({ aiTestResult: data as { ok: boolean; response?: string; error?: string } });
         break;
       }
     }

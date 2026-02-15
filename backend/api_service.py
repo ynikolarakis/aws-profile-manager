@@ -24,6 +24,7 @@ from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 from .aws_config import AWSCfg
 from .constants import COMMON_SVCS, PROFILE_NAME_RE, REGIONS, SVC, make_default_svc
 from .event_bus import events
+from .llm_service import build_system_prompt, create_provider
 from .state_manager import StateManager
 
 
@@ -91,6 +92,7 @@ class ApiService:
                 k: {"icon": v["icon"], "short": v["short"], "color": v["color"], "desc": v.get("desc", ""), "cmds": v["cmds"]}
                 for k, v in SVC.items()
             },
+            "has_llm_configured": self._has_llm_configured(),
         }
 
     def get_logo(self) -> str | None:
@@ -567,3 +569,142 @@ class ApiService:
         self.mgr.save()
         self.store.save()
         return {"ok": True, "count": len(profiles)}
+
+    # --- AI / LLM ---
+
+    def _has_llm_configured(self) -> bool:
+        llm_cfg = self.store.data.get("llm_config", {})
+        default = llm_cfg.get("default_provider")
+        providers = llm_cfg.get("providers", {})
+        return bool(default and default in providers)
+
+    def _scrub_keys(self, text: str, extra_keys: list[str] | None = None) -> str:
+        """Remove any API key fragments from error messages."""
+        keys_to_scrub: list[str] = []
+        llm_cfg = self.store.data.get("llm_config", {})
+        for prov_cfg in llm_cfg.get("providers", {}).values():
+            key = prov_cfg.get("api_key", "")
+            if key and len(key) > 8:
+                keys_to_scrub.append(key)
+        if extra_keys:
+            keys_to_scrub.extend(k for k in extra_keys if k and len(k) > 8)
+        for key in keys_to_scrub:
+            text = text.replace(key, "••••••••")
+        return text
+
+    @staticmethod
+    def _strip_markdown_fences(text: str) -> str:
+        """Remove markdown code fences from LLM output."""
+        text = text.strip()
+        # Remove ```bash ... ``` or ``` ... ```
+        if text.startswith("```"):
+            lines = text.split("\n")
+            # Remove first line (```bash or ```)
+            lines = lines[1:]
+            # Remove last line if it's ```
+            if lines and lines[-1].strip() == "```":
+                lines = lines[:-1]
+            text = "\n".join(lines).strip()
+        # Remove single backticks wrapping the whole thing
+        if text.startswith("`") and text.endswith("`") and text.count("`") == 2:
+            text = text[1:-1]
+        return text
+
+    def ai_generate(self, message: str) -> dict:
+        llm_cfg = self.store.data.get("llm_config", {})
+        default = llm_cfg.get("default_provider")
+        providers = llm_cfg.get("providers", {})
+
+        if not default or default not in providers:
+            return {"error": "No AI provider configured. Open Settings → AI Providers."}
+
+        provider_cfg = providers[default]
+        profile = self._active
+        prof = self.mgr.profiles.get(profile, {})
+
+        system_prompt = build_system_prompt(
+            profile_name=profile,
+            profile_type=prof.get("type", "unknown"),
+            region=prof.get("region", "us-east-1"),
+            account_id=prof.get("sso_account_id", ""),
+        )
+
+        extra_keys = [provider_cfg.get("api_key", "")]
+
+        def _run():
+            try:
+                provider = create_provider(default, provider_cfg)
+                full_text = ""
+                for chunk in provider.generate(system_prompt, message):
+                    full_text += chunk
+                    events.send("ai_chunk", {"text": chunk})
+                command = self._strip_markdown_fences(full_text)
+                events.send("ai_done", {"command": command})
+            except Exception as e:
+                err_msg = self._scrub_keys(str(e)[:200], extra_keys=extra_keys)
+                events.send("ai_error", {"error": err_msg})
+
+        threading.Thread(target=_run, daemon=True).start()
+        return {"ok": True}
+
+    def get_llm_config(self) -> dict:
+        llm_cfg = self.store.data.get("llm_config", {})
+        default = llm_cfg.get("default_provider")
+        providers = llm_cfg.get("providers", {})
+
+        # Mask API keys
+        masked: dict = {}
+        for ptype, pcfg in providers.items():
+            entry = {**pcfg}
+            if entry.get("api_key"):
+                entry["has_api_key"] = True
+                entry["api_key"] = "••••••••"
+            masked[ptype] = entry
+
+        return {
+            "default_provider": default,
+            "providers": masked,
+        }
+
+    def save_llm_config(self, data: dict) -> dict:
+        providers_input = data.get("providers", {})
+        default = data.get("default_provider")
+
+        existing = self.store.data.get("llm_config", {}).get("providers", {})
+
+        providers: dict = {}
+        for ptype, pcfg in providers_input.items():
+            entry = {**pcfg}
+            # Handle __keep__ sentinel for unchanged API keys
+            if entry.get("api_key") == "__keep__":
+                old_key = existing.get(ptype, {}).get("api_key", "")
+                entry["api_key"] = old_key
+            providers[ptype] = entry
+
+        self.store.data["llm_config"] = {
+            "default_provider": default,
+            "providers": providers,
+        }
+        self.store.save()
+        return {"ok": True}
+
+    def test_llm_provider(self, provider_type: str, config: dict) -> dict:
+        # Resolve masked API keys from stored config
+        resolved = {**config}
+        if resolved.get("api_key") in ("••••••••", "__keep__", "", None):
+            stored = self.store.data.get("llm_config", {}).get("providers", {}).get(provider_type, {})
+            stored_key = stored.get("api_key", "")
+            if stored_key:
+                resolved["api_key"] = stored_key
+            else:
+                return {"ok": False, "error": "No API key configured. Enter a key and save first."}
+
+        extra_keys = [resolved.get("api_key", "")]
+
+        try:
+            provider = create_provider(provider_type, resolved)
+            result = provider.test()
+            return {"ok": True, "response": result[:200]}
+        except Exception as e:
+            err_msg = self._scrub_keys(str(e)[:200], extra_keys=extra_keys)
+            return {"ok": False, "error": err_msg}

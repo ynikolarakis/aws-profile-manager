@@ -91,3 +91,17 @@ class SetEncodingRequest(BaseModel):
 class ImportResponse(BaseModel):
     ok: bool = True
     count: int
+
+
+# --- AI / LLM ---
+
+class AiGenerateRequest(BaseModel):
+    message: str
+
+class SaveLlmConfigRequest(BaseModel):
+    providers: dict
+    default_provider: str | None = None
+
+class TestLlmProviderRequest(BaseModel):
+    provider_type: str
+    config: dict

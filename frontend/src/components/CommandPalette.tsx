@@ -22,6 +22,7 @@ import {
   Star,
   Radar,
   Settings,
+  Sparkles,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -41,6 +42,7 @@ export function CommandPalette() {
   const setTheme = useStore((s) => s.setTheme);
   const reload = useStore((s) => s.reload);
   const runCommand = useStore((s) => s.runCommand);
+  const toggleAiMode = useStore((s) => s.toggleAiMode);
 
   const handleSelect = (cb: () => void) => {
     setOpen(false);
@@ -134,6 +136,11 @@ export function CommandPalette() {
           <CommandItem onSelect={() => handleSelect(() => setDialog({ type: "settings", data: {} }))}>
             <Settings className="text-[var(--t3)]" />
             <span>Settings</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleSelect(() => toggleAiMode())}>
+            <Sparkles className="text-[var(--t3)]" />
+            <span>Toggle AI Mode</span>
+            <CommandShortcut>Ctrl+I</CommandShortcut>
           </CommandItem>
         </CommandGroup>
 

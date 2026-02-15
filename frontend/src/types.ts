@@ -59,7 +59,7 @@ export interface CostData {
 export interface TerminalLine {
   id: number;
   text: string;
-  type: "output" | "prompt" | "cmd" | "error" | "info";
+  type: "output" | "prompt" | "cmd" | "error" | "info" | "ai-command";
 }
 
 export interface AppState {
@@ -74,6 +74,25 @@ export interface AppState {
   services_map: Record<string, ServiceDef>;
   terminal_encoding: string;
   default_encoding: string;
+  has_llm_configured: boolean;
+}
+
+// --- LLM / AI types ---
+
+export type LlmProviderType = "bedrock" | "anthropic" | "openai" | "google" | "openrouter" | "ollama";
+
+export interface LlmProviderConfig {
+  api_key?: string;
+  has_api_key?: boolean;
+  model?: string;
+  bedrock_profile?: string;
+  bedrock_region?: string;
+  base_url?: string;
+}
+
+export interface LlmConfig {
+  default_provider: LlmProviderType | null;
+  providers: Partial<Record<LlmProviderType, LlmProviderConfig>>;
 }
 
 export interface SsoDiscoveredAccount {
