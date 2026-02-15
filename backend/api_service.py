@@ -8,8 +8,15 @@ import os
 import subprocess
 import sys
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
+# Detect Windows OEM codepage as default for subprocess output decoding
+if sys.platform == "win32":
+    import ctypes
+    _DEFAULT_ENCODING = f"cp{ctypes.windll.kernel32.GetOEMCP()}"
+else:
+    _DEFAULT_ENCODING = "utf-8"
 
 import boto3
 from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
@@ -27,6 +34,9 @@ class ApiService:
         self._active = self.mgr.active()
         self._creds: dict = {}
         self._init_creds()
+
+    def _get_encoding(self) -> str:
+        return self.store.data.get("terminal_encoding", "") or _DEFAULT_ENCODING
 
     def _init_creds(self):
         prof = self.mgr.profiles.get(self._active, {})
@@ -75,6 +85,8 @@ class ApiService:
             "active": self._active,
             "collapsed": self.store.data.get("collapsed", {}),
             "regions": REGIONS,
+            "terminal_encoding": self._get_encoding(),
+            "default_encoding": _DEFAULT_ENCODING,
             "services_map": {
                 k: {"icon": v["icon"], "short": v["short"], "color": v["color"], "desc": v.get("desc", ""), "cmds": v["cmds"]}
                 for k, v in SVC.items()
@@ -163,8 +175,9 @@ class ApiService:
                 if sys.platform == "win32":
                     kw["creationflags"] = 0x08000000
                 proc = subprocess.Popen(run_cmd, **kw)
+                enc = self._get_encoding()
                 for line in iter(proc.stdout.readline, b""):
-                    events.send("term", {"type": "output", "text": line.decode("utf-8", errors="replace")})
+                    events.send("term", {"type": "output", "text": line.decode(enc, errors="replace")})
                 proc.wait()
                 events.send("term", {"type": "done", "code": proc.returncode})
             except FileNotFoundError:
@@ -195,7 +208,7 @@ class ApiService:
                         kw["creationflags"] = 0x08000000
                     proc = subprocess.Popen(run_cmd, **kw)
                     out, _ = proc.communicate(timeout=30)
-                    events.send("term", {"type": "output", "text": out.decode("utf-8", errors="replace")})
+                    events.send("term", {"type": "output", "text": out.decode(self._get_encoding(), errors="replace")})
                     if proc.returncode == 0:
                         events.send("term", {"type": "output", "text": "  done\n"})
                     else:
@@ -257,6 +270,16 @@ class ApiService:
         self.store.data["theme"] = theme
         self.store.save()
         return {"ok": True}
+
+    def set_encoding(self, encoding: str) -> dict:
+        # Validate by attempting a decode
+        try:
+            b"test".decode(encoding)
+        except LookupError:
+            return {"error": f"Unknown encoding: {encoding}"}
+        self.store.data["terminal_encoding"] = encoding
+        self.store.save()
+        return {"ok": True, "encoding": encoding}
 
     def discover_services(self, profile: str | None = None) -> dict:
         profile = profile or self._active
@@ -382,12 +405,12 @@ class ApiService:
         cache_dir = Path.home() / ".aws" / "sso" / "cache"
         results: dict = {}
         if cache_dir.exists():
-            now = datetime.now()
+            now = datetime.now(timezone.utc)
             for f in cache_dir.glob("*.json"):
                 try:
                     data = json.loads(f.read_text())
                     if "expiresAt" in data:
-                        exp = datetime.fromisoformat(data["expiresAt"].replace("Z", "").split("+")[0])
+                        exp = datetime.fromisoformat(data["expiresAt"].replace("Z", "+00:00"))
                         if exp > now:
                             for n, p in self.mgr.profiles.items():
                                 if p.get("type") == "sso":
@@ -411,15 +434,16 @@ class ApiService:
         cache_dir = Path.home() / ".aws" / "sso" / "cache"
         if not cache_dir.exists():
             return None
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         for f in cache_dir.glob("*.json"):
             try:
                 data = json.loads(f.read_text())
-                if data.get("startUrl") != sso_start_url:
+                if data.get("startUrl", "").rstrip("/") != sso_start_url.rstrip("/"):
                     continue
                 if "expiresAt" not in data or "accessToken" not in data:
                     continue
-                exp = datetime.fromisoformat(data["expiresAt"].replace("Z", "").split("+")[0])
+                exp_str = data["expiresAt"].replace("Z", "+00:00")
+                exp = datetime.fromisoformat(exp_str)
                 if exp > now:
                     region = data.get("region", "us-east-1")
                     return (data["accessToken"], region)
@@ -428,67 +452,79 @@ class ApiService:
         return None
 
     def discover_sso_accounts(self, sso_start_url: str | None = None) -> dict:
-        # Determine sso_start_url from param or first SSO profile
-        if not sso_start_url:
+        # Collect SSO URLs to scan: specific one, or all unique URLs from profiles
+        urls: list[str] = []
+        if sso_start_url:
+            urls = [sso_start_url]
+        else:
+            seen: set[str] = set()
             for _n, p in self.mgr.profiles.items():
                 if p.get("type") == "sso" and p.get("sso_start_url"):
-                    sso_start_url = p["sso_start_url"]
-                    break
-        if not sso_start_url:
+                    u = p["sso_start_url"].rstrip("/")
+                    if u not in seen:
+                        seen.add(u)
+                        urls.append(p["sso_start_url"])
+        if not urls:
             return {"error": "No SSO profiles found. Create an SSO profile first."}
 
-        url = sso_start_url
-
         def _go():
-            try:
-                token_result = self._find_sso_token(url)
-                if not token_result:
-                    events.send("sso_accounts", {"error": "SSO session expired. Run 'aws sso login' first.", "accounts": []})
-                    return
-                access_token, region = token_result
-                sso = boto3.client("sso", region_name=region)
+            all_results = []
+            errors = []
+            for url in urls:
+                try:
+                    token_result = self._find_sso_token(url)
+                    if not token_result:
+                        errors.append(f"Session expired for {url}")
+                        continue
+                    access_token, region = token_result
+                    sso = boto3.client("sso", region_name=region)
 
-                # Paginate list_accounts
-                all_accounts = []
-                paginator = sso.get_paginator("list_accounts")
-                for page in paginator.paginate(accessToken=access_token):
-                    all_accounts.extend(page.get("accountList", []))
+                    # Paginate list_accounts
+                    accounts = []
+                    paginator = sso.get_paginator("list_accounts")
+                    for page in paginator.paginate(accessToken=access_token):
+                        accounts.extend(page.get("accountList", []))
 
-                # For each account, get roles
-                results = []
-                for acct in all_accounts:
-                    account_id = acct["accountId"]
-                    account_name = acct.get("accountName", account_id)
-                    account_email = acct.get("emailAddress", "")
-                    role_paginator = sso.get_paginator("list_account_roles")
-                    for role_page in role_paginator.paginate(accessToken=access_token, accountId=account_id):
-                        for role in role_page.get("roleList", []):
-                            role_name = role["roleName"]
-                            suggested = f"{account_name}-{role_name}".lower().replace(" ", "-")
-                            # Check if profile already exists
-                            already_exists = any(
-                                p.get("sso_account_id") == account_id and p.get("sso_role_name") == role_name
-                                for p in self.mgr.profiles.values()
-                            )
-                            results.append({
-                                "account_id": account_id,
-                                "account_name": account_name,
-                                "account_email": account_email,
-                                "role_name": role_name,
-                                "suggested_profile_name": suggested,
-                                "already_exists": already_exists,
-                                "sso_start_url": url,
-                                "sso_region": region,
-                            })
-                events.send("sso_accounts", {"accounts": results, "error": None})
-            except ClientError as e:
-                code = e.response.get("Error", {}).get("Code", "")
-                if code == "UnauthorizedException":
-                    events.send("sso_accounts", {"error": "SSO session expired. Run 'aws sso login' first.", "accounts": []})
-                else:
-                    events.send("sso_accounts", {"error": str(e)[:100], "accounts": []})
-            except Exception as e:
-                events.send("sso_accounts", {"error": str(e)[:100], "accounts": []})
+                    # For each account, get roles
+                    for acct in accounts:
+                        account_id = acct["accountId"]
+                        account_name = acct.get("accountName", account_id)
+                        account_email = acct.get("emailAddress", "")
+                        role_paginator = sso.get_paginator("list_account_roles")
+                        for role_page in role_paginator.paginate(accessToken=access_token, accountId=account_id):
+                            for role in role_page.get("roleList", []):
+                                role_name = role["roleName"]
+                                suggested = f"{account_name}-{role_name}".lower().replace(" ", "-")
+                                already_exists = any(
+                                    p.get("sso_account_id") == account_id and p.get("sso_role_name") == role_name
+                                    for p in self.mgr.profiles.values()
+                                )
+                                all_results.append({
+                                    "account_id": account_id,
+                                    "account_name": account_name,
+                                    "account_email": account_email,
+                                    "role_name": role_name,
+                                    "suggested_profile_name": suggested,
+                                    "already_exists": already_exists,
+                                    "sso_start_url": url,
+                                    "sso_region": region,
+                                })
+                except ClientError as e:
+                    code = e.response.get("Error", {}).get("Code", "")
+                    if code == "UnauthorizedException":
+                        errors.append(f"Session expired for {url}")
+                    else:
+                        errors.append(str(e)[:100])
+                except Exception as e:
+                    errors.append(str(e)[:100])
+
+            if all_results:
+                error_msg = "; ".join(errors) if errors else None
+                events.send("sso_accounts", {"accounts": all_results, "error": error_msg})
+            elif errors:
+                events.send("sso_accounts", {"accounts": [], "error": "; ".join(errors)})
+            else:
+                events.send("sso_accounts", {"accounts": [], "error": None})
 
         threading.Thread(target=_go, daemon=True).start()
         return {"ok": True}

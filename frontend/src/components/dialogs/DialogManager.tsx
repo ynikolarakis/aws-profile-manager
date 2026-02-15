@@ -5,6 +5,7 @@ import { CostExplorer } from "./CostExplorer";
 import { BulkRun } from "./BulkRun";
 import { FavoriteEditor } from "./FavoriteEditor";
 import { SsoDiscover } from "./SsoDiscover";
+import { Settings } from "./Settings";
 
 export function DialogManager() {
   const dialog = useStore((s) => s.dialog);
@@ -31,6 +32,9 @@ export function DialogManager() {
       )}
       {dialog.type === "sso-discover" && (
         <SsoDiscover data={dialog.data || {}} onClose={onClose} />
+      )}
+      {dialog.type === "settings" && (
+        <Settings onClose={onClose} />
       )}
     </>
   );

@@ -25,6 +25,7 @@ from .models import (
     DiscoverServicesRequest,
     DiscoverSsoRequest,
     EditCategoryRequest,
+    SetEncodingRequest,
     GetCostRequest,
     ImportSsoAccountsRequest,
     RemoveFavoriteRequest,
@@ -264,6 +265,11 @@ async def get_cost(req: GetCostRequest):
 @app.post("/api/fetch_cost_badges")
 async def fetch_cost_badges():
     return api.fetch_cost_badges()
+
+
+@app.post("/api/set_encoding")
+async def set_encoding(req: SetEncodingRequest):
+    return api.set_encoding(req.encoding)
 
 
 @app.post("/api/discover_sso_accounts")

@@ -2,7 +2,7 @@ import { useStore } from "@/store";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
-import { RefreshCw, Upload, Download, Sun, Moon, Plus, Search, Radar } from "lucide-react";
+import { RefreshCw, Upload, Download, Sun, Moon, Plus, Search, Radar, Settings } from "lucide-react";
 
 export function Header() {
   const active = useStore((s) => s.active);
@@ -142,6 +142,15 @@ export function Header() {
             </Button>
           </TooltipTrigger>
           <TooltipContent>{theme === "dark" ? "Light mode" : "Dark mode"}</TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" onClick={() => setDialog({ type: "settings", data: {} })}>
+              <Settings className="w-3.5 h-3.5 text-[var(--t3)]" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Settings</TooltipContent>
         </Tooltip>
 
         <Separator orientation="vertical" className="h-4 mx-0.5" />

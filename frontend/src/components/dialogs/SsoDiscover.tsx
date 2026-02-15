@@ -138,8 +138,8 @@ export function SsoDiscover({ data, onClose }: Props) {
           </div>
         )}
 
-        {/* Error */}
-        {!importResult && !loading && error && (
+        {/* Error — only show as blocking if no accounts found */}
+        {!importResult && !loading && error && accounts.length === 0 && (
           <div className="py-4">
             <div className="rounded-md border border-[var(--red)]/20 bg-[var(--red)]/5 px-3 py-2.5">
               <p className="text-[12px] text-[var(--red)]">{error}</p>
@@ -151,8 +151,15 @@ export function SsoDiscover({ data, onClose }: Props) {
         )}
 
         {/* Results */}
-        {!importResult && !loading && !error && accounts.length > 0 && (
+        {!importResult && !loading && accounts.length > 0 && (
           <div className="space-y-3">
+            {/* Partial error warning */}
+            {error && (
+              <div className="rounded-md border border-[var(--amber)]/20 bg-[var(--amber)]/5 px-3 py-2">
+                <p className="text-[11px] text-[var(--amber)]">{error}</p>
+              </div>
+            )}
+
             {/* Select All / None */}
             <div className="flex justify-between items-center">
               <span className="text-[11px] font-medium text-[var(--t3)]">

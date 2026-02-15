@@ -21,6 +21,7 @@ import {
   List,
   Star,
   Radar,
+  Settings,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
@@ -129,6 +130,10 @@ export function CommandPalette() {
           <CommandItem onSelect={() => handleSelect(() => setDialog({ type: "sso-discover", data: {} }))}>
             <Radar className="text-[var(--t3)]" />
             <span>Discover SSO Accounts</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleSelect(() => setDialog({ type: "settings", data: {} }))}>
+            <Settings className="text-[var(--t3)]" />
+            <span>Settings</span>
           </CommandItem>
         </CommandGroup>
 

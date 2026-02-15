@@ -72,6 +72,8 @@ export interface AppState {
   collapsed: Record<string, boolean>;
   regions: string[];
   services_map: Record<string, ServiceDef>;
+  terminal_encoding: string;
+  default_encoding: string;
 }
 
 export interface SsoDiscoveredAccount {
@@ -92,6 +94,7 @@ export type DialogType =
   | "bulk-run"
   | "favorite-editor"
   | "sso-discover"
+  | "settings"
   | null;
 
 export interface DialogState {

@@ -53,6 +53,7 @@ interface Store extends AppState {
   fetchCostBadges: () => Promise<void>;
   discoverSsoAccounts: (ssoStartUrl?: string) => Promise<void>;
   importSsoAccounts: (accounts: Array<Record<string, string>>) => Promise<{ ok?: boolean; count?: number; error?: string }>;
+  setEncoding: (encoding: string) => Promise<{ ok?: boolean; error?: string }>;
 
   // UI actions
   setSearch: (s: string) => void;
@@ -78,6 +79,8 @@ export const useStore = create<Store>((set, _get) => ({
   collapsed: {},
   regions: [],
   services_map: {},
+  terminal_encoding: "",
+  default_encoding: "",
   identity: null,
   costData: null,
   ssoStatus: {},
@@ -110,6 +113,8 @@ export const useStore = create<Store>((set, _get) => ({
       collapsed: state.collapsed,
       regions: state.regions,
       services_map: state.services_map,
+      terminal_encoding: state.terminal_encoding || "",
+      default_encoding: state.default_encoding || "",
     });
   },
 
@@ -232,6 +237,14 @@ export const useStore = create<Store>((set, _get) => ({
   discoverSsoAccounts: async (ssoStartUrl) => {
     set({ ssoDiscoverLoading: true, ssoDiscoverError: null, ssoDiscoveredAccounts: [] });
     await post("/discover_sso_accounts", { sso_start_url: ssoStartUrl || null });
+  },
+
+  setEncoding: async (encoding) => {
+    const result = await post<{ ok?: boolean; error?: string; encoding?: string }>("/set_encoding", { encoding });
+    if (result.ok && result.encoding) {
+      set({ terminal_encoding: result.encoding });
+    }
+    return result;
   },
 
   importSsoAccounts: async (accounts) => {

@@ -84,6 +84,9 @@ class DiscoverSsoRequest(BaseModel):
 class ImportSsoAccountsRequest(BaseModel):
     accounts: list[dict]
 
+class SetEncodingRequest(BaseModel):
+    encoding: str
+
 
 class ImportResponse(BaseModel):
     ok: bool = True
