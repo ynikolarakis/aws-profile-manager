@@ -12,7 +12,7 @@
 
 <br />
 
-<img src="https://d3227bn429fcfk.cloudfront.net/screenshots/hero-dark.png" alt="AWS Profile Manager" width="900" />
+<img src="https://awsprofilemanager.com/screenshots/hero-dark.png" alt="AWS Profile Manager" width="900" />
 
 </div>
 
@@ -35,7 +35,7 @@ Built for AWS consultants, DevOps engineers, and anyone managing multiple AWS ac
 - **Import/Export** — Backup and share profile configurations as JSON
 - **Auto-save** — Every change writes directly to `~/.aws/config` and `~/.aws/credentials` with automatic backups
 
-<img src="https://d3227bn429fcfk.cloudfront.net/screenshots/sidebar-expanded.png" alt="Profile sidebar with categories" width="900" />
+<img src="https://awsprofilemanager.com/screenshots/sidebar-expanded.png" alt="Profile sidebar with categories" width="900" />
 
 ### Built-in Terminal
 - Execute AWS CLI commands with real-time streaming output
@@ -44,7 +44,7 @@ Built for AWS consultants, DevOps engineers, and anyone managing multiple AWS ac
 - Command history and favorite commands for quick access
 - Configurable output encoding (UTF-8, CP437, CP1252, Latin-1, and more)
 
-<img src="https://d3227bn429fcfk.cloudfront.net/screenshots/profile-detail.png" alt="Terminal with CLI output" width="900" />
+<img src="https://awsprofilemanager.com/screenshots/profile-detail.png" alt="Terminal with CLI output" width="900" />
 
 ### AI Command Generation
 - Describe what you want in plain English, get the AWS CLI command
@@ -53,7 +53,7 @@ Built for AWS consultants, DevOps engineers, and anyone managing multiple AWS ac
 - Context-aware — knows your active profile, region, and account
 - Region aliases — say "Frankfurt" and it maps to `eu-central-1`
 
-<img src="https://d3227bn429fcfk.cloudfront.net/screenshots/ai-mode.png" alt="AI command generation" width="900" />
+<img src="https://awsprofilemanager.com/screenshots/ai-mode.png" alt="AI command generation" width="900" />
 
 ### Cost Explorer
 - Per-profile monthly cost breakdown by AWS service
@@ -64,7 +64,7 @@ Built for AWS consultants, DevOps engineers, and anyone managing multiple AWS ac
 - `Ctrl+K` to open — search profiles, switch accounts, trigger actions
 - Keyboard-first design — every action has a shortcut
 
-<img src="https://d3227bn429fcfk.cloudfront.net/screenshots/command-palette.png" alt="Command palette" width="900" />
+<img src="https://awsprofilemanager.com/screenshots/command-palette.png" alt="Command palette" width="900" />
 
 ### SSO Account Discovery
 - Auto-discover all available SSO accounts and roles from your AWS Organizations
@@ -145,7 +145,7 @@ make legacy
 
 Configure providers in **Settings > AI Providers**. Each provider can be tested before use.
 
-<img src="https://d3227bn429fcfk.cloudfront.net/screenshots/settings-ai.png" alt="AI provider settings" width="900" />
+<img src="https://awsprofilemanager.com/screenshots/settings-ai.png" alt="AI provider settings" width="900" />
 
 ---
 
