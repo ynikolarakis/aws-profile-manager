@@ -36,7 +36,8 @@ export function InfraDiagram({ data, onClose }: Props) {
   const handleRescan = () => startInfraScan(profile);
 
   const resourceCount = infraGraph ? Object.keys(infraGraph.resources).length : 0;
-  const edgeCount = infraGraph ? infraGraph.edges.length : 0;
+  const visibleNodeCount = infraDiagramNodes.length;
+  const edgeCount = infraDiagramEdges.length;
   const errorCount = infraGraph?.scan_errors?.length || 0;
 
   const showDiagram = !infraScanning && infraDiagramNodes.length > 0;
@@ -65,7 +66,7 @@ export function InfraDiagram({ data, onClose }: Props) {
             {infraScanning
               ? "Scanning infrastructure..."
               : resourceCount > 0
-                ? `${resourceCount} resources, ${edgeCount} relationships${errorCount > 0 ? `, ${errorCount} scan errors` : ""}`
+                ? `${resourceCount} resources (${visibleNodeCount} displayed), ${edgeCount} relationships${errorCount > 0 ? `, ${errorCount} scan errors` : ""}`
                 : "No resources found"
             }
           </DialogDescription>

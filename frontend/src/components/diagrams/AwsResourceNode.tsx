@@ -1,31 +1,14 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 
-const SERVICE_ICONS: Record<string, string> = {
-  EC2: "\u{1F5A5}\uFE0F",
-  VPC: "\u{1F310}",
-  RDS: "\u{1F4BE}",
-  S3: "\u{1FAA3}",
-  Lambda: "\u{26A1}",
-  ELB: "\u{2696}\uFE0F",
-  ECS: "\u{1F433}",
-  DynamoDB: "\u{1F4CA}",
-  SQS: "\u{1F4E8}",
-  SNS: "\u{1F514}",
-  CloudFront: "\u{1F30D}",
-  Route53: "\u{1F9ED}",
-  "API Gateway": "\u{1F6AA}",
-  ElastiCache: "\u{26A1}",
-  IAM: "\u{1F512}",
-  KMS: "\u{1F511}",
-  CloudWatch: "\u{1F4C8}",
-};
-
 interface AwsResourceData {
   label: string;
   resourceType: string;
   service: string;
-  color: string;
+  serviceColor: string;
+  icon: string;
+  count: number;
+  collapsed: boolean;
   arn?: string;
   properties?: Record<string, unknown>;
   tags?: Record<string, string>;
@@ -33,24 +16,53 @@ interface AwsResourceData {
 
 function AwsResourceNodeInner({ data }: NodeProps) {
   const d = data as unknown as AwsResourceData;
-  const icon = SERVICE_ICONS[d.service] || "\u2601\uFE0F";
+  const count = d.count || 1;
+  const isCollapsed = d.collapsed || count > 1;
 
   return (
-    <div className="flex flex-col items-center gap-0.5 min-w-[50px]">
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-[var(--t4)]" />
+    <div
+      className="relative flex items-center gap-2 bg-[var(--bg-1)] border border-[var(--border)] rounded-lg px-2.5 py-2 shadow-sm hover:shadow-md transition-shadow min-w-[130px] max-w-[160px]"
+      style={{ borderLeftWidth: 3, borderLeftColor: d.serviceColor }}
+    >
+      <Handle
+        type="target"
+        position={Position.Left}
+        className="!w-2 !h-2 !bg-[var(--t4)] !border-[var(--border)]"
+      />
+
+      {/* Service icon badge */}
       <div
-        className="w-10 h-10 rounded-lg flex items-center justify-center text-lg shadow-sm border border-white/20"
-        style={{ backgroundColor: d.color + "22", borderColor: d.color + "44" }}
+        className="w-7 h-7 rounded-md flex items-center justify-center text-sm shrink-0"
+        style={{ backgroundColor: d.serviceColor + "18", color: d.serviceColor }}
       >
-        {icon}
+        {d.icon || "\u2601\uFE0F"}
       </div>
-      <span className="text-[10px] font-medium text-[var(--t1)] max-w-[100px] truncate text-center leading-tight">
-        {d.label}
-      </span>
-      <span className="text-[8px] text-[var(--t4)] leading-tight">
-        {d.resourceType.replace(/_/g, " ")}
-      </span>
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-[var(--t4)]" />
+
+      {/* Label + type */}
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className="text-[10px] font-semibold text-[var(--t1)] truncate leading-tight">
+          {d.label}
+        </span>
+        <span className="text-[8px] text-[var(--t4)] leading-tight mt-0.5">
+          {d.service}
+        </span>
+      </div>
+
+      {/* Count badge for collapsed groups */}
+      {isCollapsed && count > 1 && (
+        <div
+          className="absolute -top-2 -right-2 text-white text-[8px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 shadow-sm"
+          style={{ backgroundColor: d.serviceColor }}
+        >
+          {count}
+        </div>
+      )}
+
+      <Handle
+        type="source"
+        position={Position.Right}
+        className="!w-2 !h-2 !bg-[var(--t4)] !border-[var(--border)]"
+      />
     </div>
   );
 }

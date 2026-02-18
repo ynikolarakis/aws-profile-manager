@@ -611,15 +611,18 @@ class ApiService:
     def generate_diagram(self, graph: dict, layout_mode: str = "algorithmic",
                          fmt: str = "reactflow", llm_result: dict | None = None) -> dict:
         engine = AlgorithmicLayoutEngine()
-        positions = engine.layout(graph)
+        positions, collapse_map, visible_resources = engine.layout(graph)
 
         if fmt == "drawio":
             generator = DrawioXmlGenerator()
-            xml = generator.generate(graph, positions)
+            xml = generator.generate(graph, positions, collapse_map,
+                                     visible_resources=visible_resources)
             return {"xml": xml}
 
         converter = ReactFlowConverter()
-        result = converter.convert(graph, positions, llm_result=llm_result)
+        result = converter.convert(graph, positions, collapse_map,
+                                   llm_result=llm_result,
+                                   visible_resources=visible_resources)
         return result
 
     def infra_llm_layout(self, graph: dict) -> dict:
