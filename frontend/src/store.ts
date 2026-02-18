@@ -6,7 +6,10 @@ import type {
   CostData,
   DialogState,
   Identity,
+  InfraGraph,
+  InfraScanProgress,
   LlmConfig,
+  LlmLayoutResult,
   LlmProviderConfig,
   LlmProviderType,
   ServiceDef,
@@ -34,6 +37,16 @@ interface Store extends AppState {
   ssoDiscoveredAccounts: SsoDiscoveredAccount[];
   ssoDiscoverLoading: boolean;
   ssoDiscoverError: string | null;
+
+  // Infrastructure diagram state
+  infraGraph: InfraGraph | null;
+  infraScanProgress: InfraScanProgress[];
+  infraScanning: boolean;
+  infraDiagramNodes: unknown[];
+  infraDiagramEdges: unknown[];
+  infraLayoutMode: "algorithmic" | "llm";
+  infraLlmResult: LlmLayoutResult | null;
+  infraLlmLoading: boolean;
 
   // AI state
   aiMode: boolean;
@@ -65,6 +78,13 @@ interface Store extends AppState {
   discoverSsoAccounts: (ssoStartUrl?: string) => Promise<void>;
   importSsoAccounts: (accounts: Array<Record<string, string>>) => Promise<{ ok?: boolean; count?: number; error?: string }>;
   setEncoding: (encoding: string) => Promise<{ ok?: boolean; error?: string }>;
+
+  // Infrastructure diagram actions
+  startInfraScan: (profile?: string, region?: string, services?: string[]) => Promise<void>;
+  generateDiagram: (graph?: InfraGraph, llmResult?: LlmLayoutResult | null) => Promise<void>;
+  requestLlmLayout: () => Promise<void>;
+  exportDrawio: () => Promise<void>;
+  setInfraLayoutMode: (mode: "algorithmic" | "llm") => void;
 
   // AI actions
   toggleAiMode: () => void;
@@ -120,6 +140,14 @@ export const useStore = create<Store>((set, _get) => ({
   ssoDiscoveredAccounts: [],
   ssoDiscoverLoading: false,
   ssoDiscoverError: null,
+  infraGraph: null,
+  infraScanProgress: [],
+  infraScanning: false,
+  infraDiagramNodes: [],
+  infraDiagramEdges: [],
+  infraLayoutMode: "algorithmic",
+  infraLlmResult: null,
+  infraLlmLoading: false,
   aiMode: false,
   aiStreaming: false,
   aiStreamedText: "",
@@ -288,6 +316,60 @@ export const useStore = create<Store>((set, _get) => ({
     return result;
   },
 
+  // Infrastructure diagram actions
+  startInfraScan: async (profile, region, services) => {
+    set({ infraScanning: true, infraScanProgress: [], infraGraph: null, infraDiagramNodes: [], infraDiagramEdges: [] });
+    await post("/infra_scan", { profile: profile || null, region: region || null, services: services || null });
+  },
+
+  generateDiagram: async (graphOverride, llmResultOverride) => {
+    const store = _get();
+    const graph = graphOverride || store.infraGraph;
+    if (!graph) return;
+    const llmResult = llmResultOverride !== undefined ? llmResultOverride : store.infraLlmResult;
+    const result = await post<{ nodes?: unknown[]; edges?: unknown[] }>("/infra_diagram", {
+      graph, layout_mode: store.infraLayoutMode, format: "reactflow",
+      llm_result: store.infraLayoutMode === "llm" ? llmResult : null,
+    });
+    set({ infraDiagramNodes: result.nodes || [], infraDiagramEdges: result.edges || [] });
+  },
+
+  requestLlmLayout: async () => {
+    const store = _get();
+    if (!store.infraGraph) return;
+    set({ infraLlmLoading: true });
+    await post("/infra_llm_layout", { graph: store.infraGraph });
+  },
+
+  exportDrawio: async () => {
+    const store = _get();
+    if (!store.infraGraph) return;
+    const result = await post<{ xml?: string }>("/infra_diagram", {
+      graph: store.infraGraph, layout_mode: "algorithmic", format: "drawio",
+    });
+    if (result.xml) {
+      const blob = new Blob([result.xml], { type: "application/xml" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `aws-architecture-${store.infraGraph.profile || "diagram"}.drawio`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  },
+
+  setInfraLayoutMode: (mode) => {
+    set({ infraLayoutMode: mode });
+    const store = _get();
+    if (store.infraGraph) {
+      if (mode === "llm" && !store.infraLlmResult) {
+        store.requestLlmLayout();
+      } else {
+        store.generateDiagram();
+      }
+    }
+  },
+
   // AI actions
   toggleAiMode: () => {
     const store = _get();
@@ -410,6 +492,34 @@ export const useStore = create<Store>((set, _get) => ({
           ssoDiscoverLoading: false,
           ssoDiscoverError: ssoData.error || null,
         });
+        break;
+      }
+      case "infra_scan_progress": {
+        const progress = data as unknown as InfraScanProgress;
+        set((s) => ({
+          infraScanProgress: [...s.infraScanProgress.filter(p => p.service !== progress.service), progress],
+        }));
+        break;
+      }
+      case "infra_scan_complete": {
+        const graph = data as unknown as InfraGraph;
+        set({ infraGraph: graph, infraScanning: false });
+        // Auto-generate diagram
+        const store = _get();
+        store.generateDiagram(graph);
+        break;
+      }
+      case "infra_llm_layout_done": {
+        const llmResult = data as unknown as LlmLayoutResult;
+        set({ infraLlmResult: llmResult, infraLlmLoading: false });
+        const store = _get();
+        if (store.infraLayoutMode === "llm") {
+          store.generateDiagram(undefined, llmResult);
+        }
+        break;
+      }
+      case "infra_llm_layout_error": {
+        set({ infraLlmLoading: false });
         break;
       }
       case "ai_chunk": {

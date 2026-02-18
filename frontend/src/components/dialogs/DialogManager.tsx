@@ -6,6 +6,7 @@ import { BulkRun } from "./BulkRun";
 import { FavoriteEditor } from "./FavoriteEditor";
 import { SsoDiscover } from "./SsoDiscover";
 import { Settings } from "./Settings";
+import { InfraDiagram } from "../diagrams/InfraDiagram";
 
 export function DialogManager() {
   const dialog = useStore((s) => s.dialog);
@@ -35,6 +36,9 @@ export function DialogManager() {
       )}
       {dialog.type === "settings" && (
         <Settings onClose={onClose} />
+      )}
+      {dialog.type === "infra-diagram" && (
+        <InfraDiagram data={dialog.data || {}} onClose={onClose} />
       )}
     </>
   );

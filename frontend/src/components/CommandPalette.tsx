@@ -21,6 +21,7 @@ import {
   List,
   Star,
   Radar,
+  Network,
   Settings,
   Sparkles,
 } from "lucide-react";
@@ -128,6 +129,10 @@ export function CommandPalette() {
           <CommandItem onSelect={() => handleSelect(() => setDialog({ type: "favorite-editor", data: {} }))}>
             <Star className="text-[var(--t3)]" />
             <span>Add Favorite Command</span>
+          </CommandItem>
+          <CommandItem onSelect={() => handleSelect(() => setDialog({ type: "infra-diagram", data: {} }))}>
+            <Network className="text-[var(--t3)]" />
+            <span>Architecture Diagram</span>
           </CommandItem>
           <CommandItem onSelect={() => handleSelect(() => setDialog({ type: "sso-discover", data: {} }))}>
             <Radar className="text-[var(--t3)]" />

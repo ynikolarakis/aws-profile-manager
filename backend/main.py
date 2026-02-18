@@ -26,6 +26,9 @@ from .models import (
     DiscoverServicesRequest,
     DiscoverSsoRequest,
     EditCategoryRequest,
+    InfraDiagramRequest,
+    InfraLlmLayoutRequest,
+    InfraScanRequest,
     SetEncodingRequest,
     GetCostRequest,
     ImportSsoAccountsRequest,
@@ -289,6 +292,23 @@ async def import_sso_accounts(req: ImportSsoAccountsRequest):
 async def import_json(request: Request):
     body = await request.json()
     return api.import_json(body)
+
+
+# --- Infrastructure Diagram endpoints ---
+
+@app.post("/api/infra_scan")
+async def infra_scan(req: InfraScanRequest):
+    return api.infra_scan(req.profile, req.region, req.services)
+
+
+@app.post("/api/infra_diagram")
+async def infra_diagram(req: InfraDiagramRequest):
+    return api.generate_diagram(req.graph, req.layout_mode, req.format, req.llm_result)
+
+
+@app.post("/api/infra_llm_layout")
+async def infra_llm_layout(req: InfraLlmLayoutRequest):
+    return api.infra_llm_layout(req.graph)
 
 
 # --- AI / LLM endpoints ---

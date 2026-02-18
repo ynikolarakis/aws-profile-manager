@@ -105,3 +105,20 @@ class SaveLlmConfigRequest(BaseModel):
 class TestLlmProviderRequest(BaseModel):
     provider_type: str
     config: dict
+
+
+# --- Infrastructure Diagram ---
+
+class InfraScanRequest(BaseModel):
+    profile: str | None = None
+    region: str | None = None
+    services: list[str] | None = None
+
+class InfraDiagramRequest(BaseModel):
+    graph: dict
+    layout_mode: str = "algorithmic"  # "algorithmic" or "llm"
+    format: str = "reactflow"  # "reactflow" or "drawio"
+    llm_result: dict | None = None
+
+class InfraLlmLayoutRequest(BaseModel):
+    graph: dict

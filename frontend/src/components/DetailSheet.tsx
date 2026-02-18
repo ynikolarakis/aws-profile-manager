@@ -9,7 +9,8 @@ import {
 } from "@/components/ui/sheet";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, Star, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ChevronRight, Star, Loader2, Network } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const typeColors: Record<string, string> = {
@@ -32,6 +33,7 @@ export function DetailSheet() {
   const servicesMap = useStore((s) => s.services_map);
   const setDetailProfile = useStore((s) => s.setDetailProfile);
   const setProfileCategory = useStore((s) => s.setProfileCategory);
+  const setDialog = useStore((s) => s.setDialog);
   const runCommand = useStore((s) => s.runCommand);
   const addFavorite = useStore((s) => s.addFavorite);
   const discoverServices = useStore((s) => s.discoverServices);
@@ -125,6 +127,17 @@ export function DetailSheet() {
             </SelectContent>
           </Select>
         </div>
+
+        {/* Architecture Diagram */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mb-4 gap-1.5"
+          onClick={() => setDialog({ type: "infra-diagram", data: { profile: detailProfile } })}
+        >
+          <Network className="w-3.5 h-3.5" />
+          Architecture Diagram
+        </Button>
 
         {/* Services */}
         <h3 className="text-[12px] font-semibold text-[var(--t3)] uppercase tracking-wider mb-2">

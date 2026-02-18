@@ -106,6 +106,49 @@ export interface SsoDiscoveredAccount {
   sso_region: string;
 }
 
+// --- Infrastructure Diagram types ---
+
+export interface DiscoveredResource {
+  id: string;
+  arn: string;
+  resource_type: string;
+  service: string;
+  name: string;
+  region: string;
+  properties: Record<string, unknown>;
+  tags: Record<string, string>;
+}
+
+export interface ResourceEdge {
+  source_id: string;
+  target_id: string;
+  edge_type: string;
+  label: string;
+}
+
+export interface InfraGraph {
+  resources: Record<string, DiscoveredResource>;
+  edges: ResourceEdge[];
+  scan_errors: Array<{ service: string; error: string }>;
+  profile: string;
+  region: string;
+  account_id: string;
+}
+
+export interface InfraScanProgress {
+  service: string;
+  index: number;
+  total: number;
+  status: "scanning" | "done" | "error";
+  error?: string;
+}
+
+export interface LlmLayoutResult {
+  groups: Record<string, string[]>;
+  annotations: string[];
+  resource_labels: Record<string, string>;
+}
+
 export type DialogType =
   | "profile-editor"
   | "category-editor"
@@ -114,6 +157,7 @@ export type DialogType =
   | "favorite-editor"
   | "sso-discover"
   | "settings"
+  | "infra-diagram"
   | null;
 
 export interface DialogState {

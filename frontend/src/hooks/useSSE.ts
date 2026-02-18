@@ -12,7 +12,7 @@ export function useSSE() {
       const es = new EventSource("/api/events");
       esRef.current = es;
 
-      const eventTypes = ["term", "identity", "services", "cost_data", "cost_badge", "sso_status", "sso_accounts", "ai_chunk", "ai_done", "ai_error", "ai_test_result"];
+      const eventTypes = ["term", "identity", "services", "cost_data", "cost_badge", "sso_status", "sso_accounts", "ai_chunk", "ai_done", "ai_error", "ai_test_result", "infra_scan_progress", "infra_scan_complete", "infra_llm_layout_done", "infra_llm_layout_error"];
 
       for (const type of eventTypes) {
         es.addEventListener(type, (e: MessageEvent) => {

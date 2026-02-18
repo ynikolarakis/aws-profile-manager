@@ -24,6 +24,9 @@ from botocore.exceptions import ClientError, NoCredentialsError, ProfileNotFound
 from .aws_config import AWSCfg
 from .constants import COMMON_SVCS, PROFILE_NAME_RE, REGIONS, SVC, make_default_svc
 from .event_bus import events
+from .diagram_generator import AlgorithmicLayoutEngine, DrawioXmlGenerator, ReactFlowConverter
+from .diagram_llm import llm_enhance_layout
+from .infra_discovery import InfraDiscoveryService
 from .llm_service import build_system_prompt, create_provider
 from .state_manager import StateManager
 
@@ -569,6 +572,77 @@ class ApiService:
         self.mgr.save()
         self.store.save()
         return {"ok": True, "count": len(profiles)}
+
+    # --- Infrastructure Diagram ---
+
+    def infra_scan(self, profile: str | None = None, region: str | None = None,
+                   services: list[str] | None = None) -> dict:
+        profile = profile or self._active
+        prof = self.mgr.profiles.get(profile, {})
+        region = region or prof.get("region", "us-east-1")
+
+        def _go():
+            try:
+                session = boto3.Session(profile_name=profile)
+                # Resolve account ID
+                try:
+                    ident = session.client("sts", region_name=region).get_caller_identity()
+                    account_id = ident.get("Account", "")
+                except Exception:
+                    account_id = ""
+
+                discovery = InfraDiscoveryService(
+                    session=session, region=region,
+                    event_callback=lambda evt, data: events.send(evt, data),
+                )
+                graph = discovery.scan_all(selected_services=services)
+                graph.profile = profile
+                graph.account_id = account_id
+                events.send("infra_scan_complete", graph.to_dict())
+            except Exception as e:
+                events.send("infra_scan_complete", {
+                    "resources": {}, "edges": [], "scan_errors": [{"service": "init", "error": str(e)[:200]}],
+                    "profile": profile, "region": region, "account_id": "",
+                })
+
+        threading.Thread(target=_go, daemon=True).start()
+        return {"ok": True}
+
+    def generate_diagram(self, graph: dict, layout_mode: str = "algorithmic",
+                         fmt: str = "reactflow", llm_result: dict | None = None) -> dict:
+        engine = AlgorithmicLayoutEngine()
+        positions = engine.layout(graph)
+
+        if fmt == "drawio":
+            generator = DrawioXmlGenerator()
+            xml = generator.generate(graph, positions)
+            return {"xml": xml}
+
+        converter = ReactFlowConverter()
+        result = converter.convert(graph, positions, llm_result=llm_result)
+        return result
+
+    def infra_llm_layout(self, graph: dict) -> dict:
+        llm_cfg = self.store.data.get("llm_config", {})
+        default = llm_cfg.get("default_provider")
+        providers = llm_cfg.get("providers", {})
+
+        if not default or default not in providers:
+            events.send("infra_llm_layout_error", {"error": "No AI provider configured."})
+            return {"ok": True}
+
+        provider_cfg = providers[default]
+
+        def _go():
+            try:
+                result = llm_enhance_layout(graph, default, provider_cfg)
+                events.send("infra_llm_layout_done", result)
+            except Exception as e:
+                err_msg = self._scrub_keys(str(e)[:200], extra_keys=[provider_cfg.get("api_key", "")])
+                events.send("infra_llm_layout_error", {"error": err_msg})
+
+        threading.Thread(target=_go, daemon=True).start()
+        return {"ok": True}
 
     # --- AI / LLM ---
 

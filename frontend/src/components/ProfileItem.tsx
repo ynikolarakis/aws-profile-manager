@@ -61,6 +61,11 @@ export function ProfileItem({ name }: Props) {
       icon: "dollar-sign",
       action: () => setDialog({ type: "cost-explorer", data: { profile: name } }),
     },
+    {
+      label: "Architecture Diagram",
+      icon: "network",
+      action: () => setDialog({ type: "infra-diagram", data: { profile: name } }),
+    },
     { separator: true as const },
     {
       label: "Edit",
