@@ -647,16 +647,10 @@ def scan_cloudfront(svc: "InfraDiscoveryService"):
     cf = svc.session.client("cloudfront", region_name="us-east-1")
 
     try:
-        items = _paginate(cf, "list_distributions", "DistributionList")
-        # list_distributions returns nested structure
-        if isinstance(items, dict):
-            items = items.get("Items", [])
+        resp = cf.list_distributions()
+        items = resp.get("DistributionList", {}).get("Items", []) or []
     except ClientError:
-        try:
-            resp = cf.list_distributions()
-            items = resp.get("DistributionList", {}).get("Items", []) or []
-        except ClientError:
-            return
+        return
 
     for dist in (items or []):
         dist_id = dist["Id"]

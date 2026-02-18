@@ -344,6 +344,8 @@ if STATIC_DIR.exists():
     @app.get("/{full_path:path}")
     async def spa_catch_all(full_path: str):
         """Serve SPA index.html for all non-API routes."""
+        if full_path.startswith("api/"):
+            return JSONResponse({"error": "Not found"}, status_code=404)
         file_path = STATIC_DIR / full_path
         if file_path.exists() and file_path.is_file():
             return FileResponse(str(file_path))
